@@ -1,0 +1,178 @@
+/* PESTAÑAS (PDF / TEXTO) */
+.tab-group {
+  display: flex;
+  background-color: var(--bg-primary);
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  gap: 0.25rem;
+}
+
+.tab-btn {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background-color: var(--bg-surface);
+  color: var(--accent-primary);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ZONA DRAG AND DROP PDF */
+.dropzone {
+  border: 2px dashed var(--dropzone-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--dropzone-bg);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--accent-primary);
+  background-color: var(--dropzone-hover);
+}
+
+.dropzone-icon { font-size: 2.5rem; margin-bottom: 0.5rem; display: block; }
+.dropzone-text { font-size: 0.95rem; font-weight: 600; }
+.dropzone-subtext { font-size: 0.8rem; color: var(--text-muted); }
+
+.file-input {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer;
+}
+
+.file-badge {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--accent-subtle);
+  border: 1px solid var(--accent-border);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.file-badge.visible { display: flex; }
+
+.btn-remove-file {
+  background: none; border: none;
+  color: var(--status-danger);
+  font-size: 1.1rem; cursor: pointer;
+}
+
+/* FORMULARIOS Y BOTONES */
+.form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+label { font-size: 0.875rem; font-weight: 600; }
+
+input[type="text"], textarea {
+  width: 100%; padding: 0.75rem 1rem;
+  font-family: inherit; font-size: 0.9rem;
+  color: var(--text-main); background-color: var(--bg-primary);
+  border: 1px solid var(--border-color); border-radius: var(--radius-md);
+  outline: none;
+}
+
+button {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.5rem; font-family: inherit; font-size: 0.95rem; font-weight: 600;
+  padding: 0.85rem 1.25rem; border-radius: var(--radius-md);
+  border: 1px solid transparent; cursor: pointer;
+}
+
+.btn-primary { width: 100%; background-color: var(--accent-primary); color: #ffffff; }
+.btn-primary:hover:not(:disabled) { background-color: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+#themeToggleBtn {
+  background-color: var(--bg-primary); color: var(--text-main);
+  border-color: var(--border-color); padding: 0.5rem 0.85rem;
+}
+
+/* CARDS DE AGENTES Y FEEDBACK */
+.status-box {
+  padding: 0.85rem 1rem; border-radius: var(--radius-md);
+  background-color: var(--status-bg); border: 1px solid var(--border-color);
+  font-size: 0.875rem; color: var(--text-muted);
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.agent-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;
+}
+
+.agent-header { display: flex; align-items: center; justify-content: space-between; }
+.agent-title { font-size: 1rem; font-weight: 700; }
+
+.agent-status-badge {
+  font-size: 0.75rem; padding: 0.2rem 0.5rem;
+  border-radius: 4px; background-color: var(--border-color); color: var(--text-muted);
+}
+.agent-status-badge.working { background-color: var(--accent-subtle); color: var(--accent-primary); }
+.agent-status-badge.done { background-color: rgba(16, 185, 129, 0.15); color: var(--status-success); }
+
+.agent-output {
+  padding: 1rem; background-color: var(--bg-surface);
+  border-radius: var(--radius-md); border: 1px solid var(--border-color);
+  font-size: 0.875rem; white-space: pre-wrap; min-height: 140px; max-height: 350px; overflow-y: auto;
+}
+
+.summary-card { border-color: var(--accent-primary); }
+
+/* BADGE DE ESTADO OLLAMA */
+.ollama-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.ollama-status.online {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--status-success);
+}
+
+.ollama-status.online .status-dot {
+  background-color: var(--status-success);
+  box-shadow: 0 0 8px var(--status-success);
+}
+
+.ollama-status.offline {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--status-danger);
+}
+
+.ollama-status.offline .status-dot {
+  background-color: var(--status-danger);
+}
