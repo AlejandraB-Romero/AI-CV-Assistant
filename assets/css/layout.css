@@ -74,3 +74,100 @@
   font-size: 1.15rem;
   font-weight: 700;
 }
+
+/* DASHBOARD KPI HEADER */
+.dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.metric-card .metric-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+}
+
+.metric-card .metric-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+/* PIPELINE VISUAL */
+.pipeline-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background-color: var(--bg-primary);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 75px;
+}
+
+.pipeline-node {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.pipeline-step.working .pipeline-node {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-primary);
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+.pipeline-step.done .pipeline-node {
+  background-color: var(--status-success);
+  border-color: var(--status-success);
+  color: #ffffff;
+}
+
+.pipeline-connector {
+  flex: 1;
+  height: 2px;
+  background-color: var(--border-color);
+  min-width: 15px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
