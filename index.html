@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CV Auditor AI Pro - IA Local</title>
+  <title>CV Auditor AI Enterprise</title>
   
-  <!-- PDF.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-  <!-- Hojas de Estilo Separadas -->
   <link rel="stylesheet" href="./assets/css/variables.css">
   <link rel="stylesheet" href="./assets/css/layout.css">
   <link rel="stylesheet" href="./assets/css/components.css">
@@ -16,25 +14,24 @@
 <body>
 
   <header class="app-header">
-  <div class="brand">
-    <div class="brand-icon">CV</div>
-    <h1>CV Auditor <span>AI Pro</span></h1>
-  </div>
-  <div class="controls">
-    <!-- Indicador de Estado Ollama -->
-    <div id="ollamaStatus" class="ollama-status offline">
-      <span class="status-dot"></span>
-      <span id="ollamaStatusText">Ollama Offline</span>
+    <div class="brand">
+      <div class="brand-icon">CV</div>
+      <h1>CV Auditor <span>Enterprise</span></h1>
     </div>
+    <div class="controls">
+      <div id="ollamaStatus" class="ollama-status offline">
+        <span class="status-dot"></span>
+        <span id="ollamaStatusText">Ollama Offline</span>
+      </div>
 
-    <button id="themeToggleBtn" aria-label="Cambiar Tema">
-      <span id="themeIcon">☀️</span> Tema
-    </button>
-  </div>
-</header>
+      <button id="themeToggleBtn" aria-label="Cambiar Tema">
+        <span id="themeIcon">☀️</span> Tema
+      </button>
+    </div>
+  </header>
 
   <main class="main-container">
-    <!-- PANEL DE ENTRADA -->
+    <!-- PANEL IZQUIERDO -->
     <section class="panel">
       <div class="panel-header">
         <h2>📄 Entrada de Curriculum</h2>
@@ -47,16 +44,16 @@
       <form id="cvForm">
         <div class="form-group">
           <label for="modelSelect">Modelo de IA Local (Ollama):</label>
-          <input type="text" id="modelSelect" value="llama3" placeholder="Ej: llama3, mistral, gemma" required>
+          <select id="modelSelect" required>
+            <option value="">Cargando modelos...</option>
+          </select>
         </div>
 
-        <!-- TAB 1: ARCHIVO PDF -->
         <div id="pdfTab" class="tab-content active">
           <div class="form-group">
-            <label>Cargar Currículum en PDF:</label>
             <div class="dropzone" id="pdfDropzone">
               <span class="dropzone-icon">📁</span>
-              <div class="dropzone-text">Arrastra tu archivo PDF aquí o haz clic para examinar</div>
+              <div class="dropzone-text">Arrastra tu CV en PDF aquí o haz clic</div>
               <div class="dropzone-subtext">Procesamiento local 100% privado en tu navegador</div>
               <input type="file" id="pdfFileInput" class="file-input" accept="application/pdf">
             </div>
@@ -66,61 +63,128 @@
                 <span>📄</span>
                 <span id="fileNameDisplay">archivo.pdf</span>
               </div>
-              <button type="button" class="btn-remove-file" id="btnRemoveFile" title="Quitar archivo">✕</button>
+              <button type="button" class="btn-remove-file" id="btnRemoveFile">✕</button>
             </div>
           </div>
         </div>
 
-        <!-- TAB 2: TEXTO PLANO -->
         <div id="textTab" class="tab-content">
           <div class="form-group">
-            <label for="cvContent">Texto extraído / copiado:</label>
-            <textarea id="cvContent" rows="12" placeholder="Pega aquí el contenido en texto de tu CV..."></textarea>
+            <textarea id="cvContent" rows="10" placeholder="Pega el texto del CV..."></textarea>
           </div>
         </div>
 
         <button type="submit" id="analyzeBtn" class="btn-primary" style="margin-top: 1rem;">
-          🚀 Iniciar Análisis Multi-Agente
+          🚀 Ejecutar Orquestación Multi-Agente
         </button>
       </form>
+
+      <!-- CONSOLA DE LOGS SCRIPT / ORQUESTADOR -->
+      <div style="margin-top: 1.5rem;">
+        <label style="margin-bottom: 0.5rem; display: block;">📟 Consola de Orquestación en Tiempo Real:</label>
+        <div class="console-panel" id="consoleLogs">
+          <div class="log-entry sys"><span class="log-time">[00:00:00]</span>Sistema inicializado. Esperando entrada de datos...</div>
+        </div>
+      </div>
     </section>
 
-    <!-- PANEL DE RESULTADOS -->
+    <!-- PANEL DERECHO: DASHBOARD Y AGENTES -->
     <section class="panel">
       <div class="panel-header">
-        <h2>📊 Panel de Diagnóstico e IA</h2>
+        <h2>📊 Dashboard de Evaluación Enterprise</h2>
       </div>
 
-      <div id="statusIndicator" class="status-box">
-        <span id="statusText">Esperando archivo o texto para analizar...</span>
+      <!-- METRICAS KPI -->
+      <div class="dashboard-metrics">
+        <div class="metric-card">
+          <div class="metric-value" id="kpiGlobalScore">--/100</div>
+          <div class="metric-label">Nota Global Media</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" id="kpiDuration">0.0s</div>
+          <div class="metric-label">Tiempo Total</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" id="kpiActiveAgents">6</div>
+          <div class="metric-label">Agentes Activos</div>
+        </div>
       </div>
 
+      <!-- PIPELINE VISUAL -->
+      <div class="pipeline-container">
+        <div class="pipeline-step" id="step-ats"><div class="pipeline-node">1</div>ATS</div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-step" id="step-recruiter"><div class="pipeline-node">2</div>Recruiter</div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-step" id="step-grammar"><div class="pipeline-node">3</div>Grammar</div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-step" id="step-technical"><div class="pipeline-node">4</div>Tech</div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-step" id="step-linkedin"><div class="pipeline-node">5</div>LinkedIn</div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-step" id="step-career"><div class="pipeline-node">6</div>Coach</div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-step" id="step-summary"><div class="pipeline-node">7</div>Summary</div>
+      </div>
+
+      <!-- GRID DE LOS 6 AGENTES -->
       <div class="agent-grid">
         <article class="agent-card">
           <div class="agent-header">
-            <div class="agent-title">🤖 Agente ATS</div>
+            <div class="agent-title">🤖 ATS Agent</div>
             <span class="agent-status-badge" id="badge-ats">En espera</span>
           </div>
-          <p class="role-desc">Analiza formato, legibilidad y palabras clave para filtros automáticos.</p>
-          <div class="agent-output" id="output-ats">Esperando inicio del proceso...</div>
+          <div class="agent-output" id="output-ats">Esperando análisis...</div>
         </article>
 
         <article class="agent-card">
           <div class="agent-header">
-            <div class="agent-title">👔 Agente Reclutador</div>
+            <div class="agent-title">👔 Recruiter Agent</div>
             <span class="agent-status-badge" id="badge-recruiter">En espera</span>
           </div>
-          <p class="role-desc">Evalúa impacto de logros, métricas cuantitativas y claridad profesional.</p>
-          <div class="agent-output" id="output-recruiter">Esperando inicio del proceso...</div>
+          <div class="agent-output" id="output-recruiter">Esperando análisis...</div>
+        </article>
+
+        <article class="agent-card">
+          <div class="agent-header">
+            <div class="agent-title">✍️ Grammar & Style</div>
+            <span class="agent-status-badge" id="badge-grammar">En espera</span>
+          </div>
+          <div class="agent-output" id="output-grammar">Esperando análisis...</div>
+        </article>
+
+        <article class="agent-card">
+          <div class="agent-header">
+            <div class="agent-title">💻 Technical Reviewer</div>
+            <span class="agent-status-badge" id="badge-technical">En espera</span>
+          </div>
+          <div class="agent-output" id="output-technical">Esperando análisis...</div>
+        </article>
+
+        <article class="agent-card">
+          <div class="agent-header">
+            <div class="agent-title">🌐 LinkedIn Advisor</div>
+            <span class="agent-status-badge" id="badge-linkedin">En espera</span>
+          </div>
+          <div class="agent-output" id="output-linkedin">Esperando análisis...</div>
+        </article>
+
+        <article class="agent-card">
+          <div class="agent-header">
+            <div class="agent-title">🎯 Career Coach</div>
+            <span class="agent-status-badge" id="badge-career">En espera</span>
+          </div>
+          <div class="agent-output" id="output-career">Esperando análisis...</div>
         </article>
       </div>
 
+      <!-- RESUMEN / PLAN DE ACCION -->
       <article class="agent-card summary-card">
         <div class="agent-header">
-          <div class="agent-title">📋 Plan de Acción Consolidado</div>
+          <div class="agent-title">📋 Plan Estratégico Consolidado</div>
           <span class="agent-status-badge" id="badge-summary">En espera</span>
         </div>
-        <div class="agent-output" id="output-summary">Esperando informe de los agentes especializados...</div>
+        <div class="agent-output" id="output-summary">Esperando resumen del orquestador...</div>
       </article>
     </section>
   </main>

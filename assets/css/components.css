@@ -176,3 +176,48 @@ button {
 .ollama-status.offline .status-dot {
   background-color: var(--status-danger);
 }
+
+/* CONSOLA DE LOGS DEL ORQUESTADOR */
+.console-panel {
+  background-color: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  color: #38bdf8;
+  height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.log-entry {
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.log-entry .log-time { color: #64748b; margin-right: 0.5rem; }
+.log-entry.sys { color: #94a3b8; }
+.log-entry.orchestrator { color: #c084fc; font-weight: bold; }
+.log-entry.agent { color: #38bdf8; }
+.log-entry.error { color: #f87171; font-weight: bold; }
+
+/* SECCIONES DENTRO DE LAS CARDS DE LOS AGENTES */
+.card-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+.bullet-list {
+  padding-left: 1.1rem;
+  font-size: 0.825rem;
+  margin-top: 0.2rem;
+}
+
+.bullet-list li {
+  margin-bottom: 0.2rem;
+}
