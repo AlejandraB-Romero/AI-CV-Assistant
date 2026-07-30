@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CV Auditor AI Enterprise</title>
-  
+
+  <!-- PDF.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+  <!-- Hojas de estilo -->
   <link rel="stylesheet" href="./assets/css/variables.css">
   <link rel="stylesheet" href="./assets/css/layout.css">
   <link rel="stylesheet" href="./assets/css/components.css">
 </head>
+
 <body>
 
+  <!-- HEADER GLOBAL -->
   <header class="app-header">
     <div class="brand">
       <div class="brand-icon">CV</div>
@@ -30,8 +35,10 @@
     </div>
   </header>
 
+  <!-- CONTENEDOR PRINCIPAL GRID -->
   <main class="main-container">
-    <!-- PANEL IZQUIERDO -->
+
+    <!-- PANEL IZQUIERDO: ENTRADA DE DATOS -->
     <section class="panel">
       <div class="panel-header">
         <h2>📄 Entrada de Curriculum</h2>
@@ -49,6 +56,16 @@
           </select>
         </div>
 
+        <div class="form-group" style="margin-top: 0.5rem;">
+          <label for="concurrencySelect">Modo de Ejecución (Rendimiento):</label>
+          <select id="concurrencySelect">
+            <option value="2">Balanceado (2 Agentes simultáneos - Recomendado)</option>
+            <option value="1">Modo Ahorro / Máquina Lenta (1 a 1)</option>
+            <option value="6">Modo Turbo (6 Agentes en paralelo - Alta GPU/RAM)</option>
+          </select>
+        </div>
+
+        <!-- TAB PDF -->
         <div id="pdfTab" class="tab-content active">
           <div class="form-group">
             <div class="dropzone" id="pdfDropzone">
@@ -68,6 +85,7 @@
           </div>
         </div>
 
+        <!-- TAB TEXTO PLANO -->
         <div id="textTab" class="tab-content">
           <div class="form-group">
             <textarea id="cvContent" rows="10" placeholder="Pega el texto del CV..."></textarea>
@@ -79,19 +97,30 @@
         </button>
       </form>
 
-      <!-- CONSOLA DE LOGS SCRIPT / ORQUESTADOR -->
+      <!-- CONSOLA DE LOGS DEL ORQUESTADOR -->
       <div style="margin-top: 1.5rem;">
         <label style="margin-bottom: 0.5rem; display: block;">📟 Consola de Orquestación en Tiempo Real:</label>
         <div class="console-panel" id="consoleLogs">
-          <div class="log-entry sys"><span class="log-time">[00:00:00]</span>Sistema inicializado. Esperando entrada de datos...</div>
+          <div class="log-entry sys">
+            <span class="log-time">[00:00:00]</span>Sistema inicializado. Esperando entrada de datos...
+          </div>
         </div>
       </div>
     </section>
 
     <!-- PANEL DERECHO: DASHBOARD Y AGENTES -->
     <section class="panel">
+      <!-- HEADER CON ACCIONES -->
+      <!-- En el panel-header de la sección derecha de index.html -->
       <div class="panel-header">
         <h2>📊 Dashboard de Evaluación Enterprise</h2>
+        <div class="action-buttons">
+          <button id="btnCompareModal" type="button" class="btn-secondary">⚔️ Comparar CVs</button>
+          <button id="btnHistory" type="button" class="btn-secondary">📜 Historial</button>
+          <button id="btnPrintPdf" type="button" class="btn-secondary" disabled>🖨️ PDF / Imprimir</button>
+          <button id="btnExportMd" type="button" class="btn-secondary" disabled>📥 Exportar MD</button>
+          <button id="btnExportJson" type="button" class="btn-secondary" disabled>💾 Exportar JSON</button>
+        </div>
       </div>
 
       <!-- METRICAS KPI -->
@@ -112,19 +141,33 @@
 
       <!-- PIPELINE VISUAL -->
       <div class="pipeline-container">
-        <div class="pipeline-step" id="step-ats"><div class="pipeline-node">1</div>ATS</div>
+        <div class="pipeline-step" id="step-ats">
+          <div class="pipeline-node">1</div>ATS
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-recruiter"><div class="pipeline-node">2</div>Recruiter</div>
+        <div class="pipeline-step" id="step-recruiter">
+          <div class="pipeline-node">2</div>Recruiter
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-grammar"><div class="pipeline-node">3</div>Grammar</div>
+        <div class="pipeline-step" id="step-grammar">
+          <div class="pipeline-node">3</div>Grammar
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-technical"><div class="pipeline-node">4</div>Tech</div>
+        <div class="pipeline-step" id="step-technical">
+          <div class="pipeline-node">4</div>Tech
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-linkedin"><div class="pipeline-node">5</div>LinkedIn</div>
+        <div class="pipeline-step" id="step-linkedin">
+          <div class="pipeline-node">5</div>LinkedIn
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-career"><div class="pipeline-node">6</div>Coach</div>
+        <div class="pipeline-step" id="step-career">
+          <div class="pipeline-node">6</div>Coach
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-summary"><div class="pipeline-node">7</div>Summary</div>
+        <div class="pipeline-step" id="step-summary">
+          <div class="pipeline-node">7</div>Summary
+        </div>
       </div>
 
       <!-- GRID DE LOS 6 AGENTES -->
@@ -189,6 +232,57 @@
     </section>
   </main>
 
+  <!-- MODAL FLOTANTE DEL HISTORIAL -->
+  <div id="historyModal" class="history-modal" style="display: none;">
+    <div class="history-content">
+      <div class="history-header">
+        <h3>📜 Historial de Análisis Guardados</h3>
+        <button id="btnCloseHistory" class="btn-close">✕</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <!-- Se llena dinámicamente desde JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE COMPARACIÓN DE CVS -->
+  <div id="compareModal" class="history-modal" style="display: none;">
+    <div class="history-content" style="max-width: 900px;">
+      <div class="history-header">
+        <h3>⚔️ Comparador Evolutivo de CV (Antes vs. Después)</h3>
+        <button id="btnCloseCompare" class="btn-close">✕</button>
+      </div>
+
+      <div style="padding: 1.25rem;">
+        <div class="comparator-panel">
+          <div class="form-group">
+            <label for="oldCvText">CV Antiguo / Versión Base:</label>
+            <textarea id="oldCvText" rows="8" placeholder="Pega el texto del CV antiguo aquí..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="newCvText">CV Nuevo / Versión Optimizada:</label>
+            <textarea id="newCvText" rows="8" placeholder="Pega el texto del CV modificado aquí..."></textarea>
+          </div>
+        </div>
+
+        <button id="btnRunComparison" type="button" class="btn-primary" style="margin-bottom: 1rem;">
+          ⚡ Analizar Impacto y Delta de Mejora
+        </button>
+
+        <!-- RESULTADO DE LA COMPARACIÓN -->
+        <div id="compareResult" class="agent-card" style="display: none;">
+          <div class="agent-header">
+            <div class="agent-title">📈 Informe de Evolución</div>
+            <span class="agent-status-badge done" id="compareScoreBadge">--% Mejora</span>
+          </div>
+          <div class="agent-output" id="compareOutput">Procesando comparación...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PUNTO DE ENTRADA JAVASCRIPT -->
   <script type="module" src="./src/main.js"></script>
 </body>
+
 </html>

@@ -117,3 +117,27 @@ export const AGENT_PROMPTS = {
     Sintetiza estos 6 análisis y genera un PLAN DE ACCIÓN ESTRATÉGICO DIRECTO con los 5 pasos prioritarios inmediatos para transformar este CV.
   `
 };
+
+// Añadir al final del objeto AGENT_PROMPTS en src/agents/agent.prompts.js:
+
+  COMPARATOR: (oldCvText, newCvText) => `
+    [REGLA DE ORO: RESPONDER OBLIGATORIAMENTE EN ESPAÑOL]
+    
+    Actúa como un Auditor Senior de Carrera Profesional.
+    Compara el "CV Antiguo" contra el "CV Nuevo/Optimizado".
+    
+    Analiza el impacto de los cambios realizados y responde con un objeto JSON válido con esta estructura exacta:
+    {
+      "improvementScore": <número del 0 al 100 con la tasa de mejora>,
+      "summary": "<resumen de 2 líneas sobre la evolución entre ambas versiones>",
+      "resolvedIssues": ["<problema que tenía el antiguo y que fue resuelto en el nuevo>"],
+      "remainingGaps": ["<aspecto que aún se puede mejorar en el nuevo CV>"],
+      "verdict": "<veredicto final sobre si el nuevo CV está listo para postular>"
+    }
+
+    --- CV ANTIGUO ---
+    ${oldCvText}
+
+    --- CV NUEVO ---
+    ${newCvText}
+  `

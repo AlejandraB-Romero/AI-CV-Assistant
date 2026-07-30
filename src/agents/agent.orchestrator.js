@@ -5,18 +5,12 @@ export class AgentOrchestrator {
     this.ollama = ollamaService;
   }
 
-  /**
-   * Intenta parsear el JSON generado por el agente.
-   * Si falla, genera un objeto estructurado seguro de respaldo.
-   */
   parseAgentResponse(rawText) {
     try {
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
+      if (jsonMatch) return JSON.parse(jsonMatch[0]);
     } catch (e) {
-      console.warn("No se pudo parsear JSON estricto del agente, usando fallback:", e);
+      console.warn("No se pudo parsear JSON del agente:", e);
     }
 
     return {
@@ -28,45 +22,45 @@ export class AgentOrchestrator {
     };
   }
 
-  async runPipeline(cvText, model, eventCallbacks) {
+  async runPipeline(cvText, model, eventCallbacks, maxConcurrency = 2) {
     const { onLog, onAgentStatus, onComplete } = eventCallbacks;
     const startTime = performance.now();
 
     onLog('sys', 'Iniciando Pipeline Enterprise Multi-Agente...');
-    onLog('sys', `Modelo asignado: [${model}]`);
+    onLog('sys', `Modelo: [${model}] | Concurrencia: [${maxConcurrency} agente(s) en paralelo]`);
 
     const agentKeys = ['ats', 'recruiter', 'grammar', 'technical', 'linkedin', 'career'];
     const results = {};
 
-    // FASE 1: Ejecución paralela de los 6 agentes especialistas
-    onLog('orchestrator', 'Despachando los 6 Agentes Especialistas en paralelo...');
+    // Mapeo de lotes según la concurrencia
+    for (let i = 0; i < agentKeys.length; i += maxConcurrency) {
+      const chunk = agentKeys.slice(i, i + maxConcurrency);
 
-    const agentPromises = agentKeys.map(async (key) => {
-      const agentName = key.toUpperCase();
-      onAgentStatus(key, 'working', 'Procesando...');
-      onLog('agent', `[${agentName}] Análisis iniciado...`);
+      const batchPromises = chunk.map(async (key) => {
+        const agentName = key.toUpperCase();
+        onAgentStatus(key, 'working', 'Procesando...');
+        onLog('agent', `[${agentName}] Análisis iniciado...`);
 
-      const agentStart = performance.now();
-      try {
-        const promptFn = AGENT_PROMPTS[agentName];
-        const rawResponse = await this.ollama.query(model, promptFn(cvText));
-        const duration = ((performance.now() - agentStart) / 1000).toFixed(2);
+        const agentStart = performance.now();
+        try {
+          const rawResponse = await this.ollama.query(model, AGENT_PROMPTS[agentName](cvText));
+          const duration = ((performance.now() - agentStart) / 1000).toFixed(2);
+          const parsedData = this.parseAgentResponse(rawResponse);
+          results[key] = parsedData;
 
-        const parsedData = this.parseAgentResponse(rawResponse);
-        results[key] = parsedData;
+          onAgentStatus(key, 'done', `${parsedData.score}/100`, parsedData);
+          onLog('agent', `[${agentName}] Completado en ${duration}s - Score: ${parsedData.score}/100`);
+        } catch (err) {
+          onAgentStatus(key, 'error', 'Error');
+          onLog('error', `[${agentName}] Falló: ${err.message}`);
+          results[key] = { score: 0, summary: `Error: ${err.message}`, strengths: [], weaknesses: [], recommendations: [] };
+        }
+      });
 
-        onAgentStatus(key, 'done', `${parsedData.score}/100`, parsedData);
-        onLog('agent', `[${agentName}] Completado en ${duration}s - Score: ${parsedData.score}/100`);
-      } catch (err) {
-        onAgentStatus(key, 'error', 'Error');
-        onLog('error', `[${agentName}] Falló la ejecución: ${err.message}`);
-        results[key] = { score: 0, summary: `Error: ${err.message}`, strengths: [], weaknesses: [], recommendations: [] };
-      }
-    });
+      await Promise.all(batchPromises);
+    }
 
-    await Promise.all(agentPromises);
-
-    // FASE 2: Síntesis del Orquestador
+    // FASE FINAL: Sintetizador / Orquestador
     onAgentStatus('summary', 'working', 'Sintetizando...');
     onLog('orchestrator', 'Consolidando reportes e informando al Director de Talento...');
 
@@ -87,22 +81,27 @@ export class AgentOrchestrator {
     }
 
     const totalDuration = ((performance.now() - startTime) / 1000).toFixed(2);
-    
-    // Cálculo de Nota Global Promedio
     const validScores = Object.values(results).map(r => r.score).filter(s => s > 0);
     const globalScore = validScores.length ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
 
-    onLog('sys', `Pipeline finalizado exitosamente en ${totalDuration}s. Nota global: ${globalScore}/100.`);
+    onLog('sys', `Pipeline finalizado en ${totalDuration}s. Nota global: ${globalScore}/100.`);
 
-    if (onComplete) {
-      onComplete({
-        globalScore,
-        totalDuration,
-        results,
-        finalSummaryText
-      });
-    }
+    const payload = {
+      globalScore,
+      totalDuration,
+      results,
+      finalSummaryText,
+      model
+    };
 
-    return results;
+    if (onComplete) onComplete(payload);
+    return payload;
+  }
+
+  async compareCVs(oldCvText, newCvText, model) {
+    const prompt = AGENT_PROMPTS.COMPARATOR(oldCvText, newCvText);
+    const rawResponse = await this.ollama.query(model, prompt);
+    return this.parseAgentResponse(rawResponse);
   }
 }
+
