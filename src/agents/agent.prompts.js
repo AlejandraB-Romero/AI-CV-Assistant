@@ -157,16 +157,23 @@ export const AGENT_PROMPTS = {
   `,
 
   ORCHESTRATOR: (resultsList) => `
-    [REGLA DE ORO: RESPONDER OBLIGATORIAMENTE EN ESPAÑOL]
+    [REGLA DE ORO: RESPONDER OBLIGATORIAMENTE EN ESPAÑOL Y EN JSON VÁLIDO]
     
-    Tu función es actuar como sintetizador ejecutivo. Revisa y consolida los informes de los 6 análisis especializados recibidos:
-    
+    Actúa como sintetizador ejecutivo. Consolida los siguientes informes especializados de los agentes:
+    === INFORMES DE AGENTES ===
     ${resultsList}
     
-    INSTRUCCIONES DE SÍNTESIS:
-    1. Identifica las 3 debilidades más críticas transversales señaladas por los agentes.
-    2. Genera un PLAN DE ACCIÓN PRIORIZADO en 5 pasos ordenados de mayor a menor impacto para transformar el CV.
-    3. Cada paso debe ser una instrucción directa y ejecutable por el usuario.
+    Responde EXCLUSIVAMENTE con un objeto JSON válido con la siguiente estructura exacta:
+    {
+      "summary": "Plan de acción priorizado para optimizar la candidatura:",
+      "actionPlan": [
+        "1. <Paso estratégico prioritario 1>",
+        "2. <Paso estratégico prioritario 2>",
+        "3. <Paso estratégico prioritario 3>",
+        "4. <Paso estratégico prioritario 4>",
+        "5. <Paso estratégico prioritario 5>"
+      ]
+    }
   `,
 
   COMPARATOR: (oldCvText, newCvText) => `
@@ -198,7 +205,7 @@ export const AGENT_PROMPTS = {
     ${newCvText}
   `,
 
- REWRITER: (originalCv, summaryRecommendations) => `
+  REWRITER: (originalCv, summaryRecommendations) => `
     [INSTRUCCIÓN QUIRÚRGICA DE EXTRACCIÓN MÁXIMA]
     Eres un parser y redactor experto de CVs. Debes escanear el texto del CV y extraer CADA SECCIÓN SOBERANAMENTE SIN OMITIR NADA.
 
@@ -241,6 +248,36 @@ export const AGENT_PROMPTS = {
 
     --- RECOMENDACIONES ---
     ${summaryRecommendations}
-  `
+  `,
 
+  INTERVIEW: (cvText, targetRole) => `
+    [DIRECTRIZ DE RECLUTADOR Y COACH DE ENTREVISTAS EN PRIMERA PERSONA]
+    Actúa como un Reclutador Senior. Analiza el siguiente CV y genera un kit de preparación para entrevistas.
+
+    REGLAS PARA LA METODOLOGÍA STAR:
+    1. REDACTA TODAS LAS GUÍAS STAR EN PRIMERA PERSONA (hablando como si fueras el candidato respondiendo al entrevistador).
+    2. USA EJEMPLOS REALES DEL CV: Menciona explícitamente sus proyectos (ej. Aplicación en C# Windows Forms, tablas con BindingSource, etc.).
+    3. NO des explicaciones de 'En tu CV mencionas...'. Pon el guion de respuesta directa (ej. "En mi formación en el IES Mare Nostrum, desarrollé una aplicación en C# para...").
+
+    RESPONDE ÚNICAMENTE CON UN OBJETO JSON VÁLIDO EN ESPAÑOL CON ESTA ESTRUCTURA EXACTA:
+    {
+      "goldQuestion": "<La pregunta más desafiante que le formularán en la entrevista>",
+      "goldTip": "<Consejo práctico del reclutador para salir airoso>",
+      "questions": [
+        {
+          "question": "<Pregunta probable de entrevista>",
+          "type": "Técnica",
+          "starGuide": {
+            "situation": "Durante mi formación en el IES Mare Nostrum, tuve el reto de crear una aplicación en C# con Windows Forms.",
+            "task": "Debía implementar un sistema de presupuestos dinámicos calculando tiempos y tipos de perfiles técnicos.",
+            "action": "Diseñé la arquitectura orientada a objetos en C#, gestionando los datos mediante DataSet y TableAdapter con validaciones en GUI.",
+            "result": "Logré un sistema estable que validaba precios y fechas sin errores sintácticos, afianzando mis bases de desarrollo frontend y backend."
+          }
+        }
+      ]
+    }
+
+    --- CV DEL CANDIDATO ---
+    ${cvText}
+  `
 };

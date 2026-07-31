@@ -18,7 +18,8 @@ export class AgentOrchestrator {
       summary: rawText,
       strengths: [],
       weaknesses: [],
-      recommendations: []
+      recommendations: [],
+      actionPlan: []
     };
   }
 
@@ -48,8 +49,8 @@ export class AgentOrchestrator {
           const parsedData = this.parseAgentResponse(rawResponse);
           results[key] = parsedData;
 
-          onAgentStatus(key, 'done', `${parsedData.score}/100`, parsedData);
-          onLog('agent', `[${agentName}] Completado en ${duration}s - Score: ${parsedData.score}/100`);
+          onAgentStatus(key, 'done', `${parsedData.score || 70}/100`, parsedData);
+          onLog('agent', `[${agentName}] Completado en ${duration}s - Score: ${parsedData.score || 70}/100`);
         } catch (err) {
           onAgentStatus(key, 'error', 'Error');
           onLog('error', `[${agentName}] Falló: ${err.message}`);
@@ -66,14 +67,21 @@ export class AgentOrchestrator {
 
     const summaryStart = performance.now();
     const formattedResults = Object.entries(results)
-      .map(([key, res]) => `--- AGENTE ${key.toUpperCase()} (Nota: ${res.score}/100) ---\nSummary: ${res.summary}`)
+      .map(([key, res]) => `--- AGENTE ${key.toUpperCase()} (Nota: ${res.score || 70}/100) ---\nResumen: ${res.summary || ''}`)
       .join('\n\n');
 
+    let parsedSummary = {};
     let finalSummaryText = '';
+
     try {
-      finalSummaryText = await this.ollama.query(model, AGENT_PROMPTS.ORCHESTRATOR(formattedResults));
+      const rawSummary = await this.ollama.query(model, AGENT_PROMPTS.ORCHESTRATOR(formattedResults));
       const summaryDuration = ((performance.now() - summaryStart) / 1000).toFixed(2);
-      onAgentStatus('summary', 'done', 'Finalizado', { summary: finalSummaryText });
+      
+      // Parsear la respuesta de la IA antes de enviarla a la UI
+      parsedSummary = this.parseAgentResponse(rawSummary);
+      finalSummaryText = parsedSummary.summary || rawSummary;
+
+      onAgentStatus('summary', 'done', 'Finalizado', parsedSummary);
       onLog('orchestrator', `Plan de Acción consolidado generado en ${summaryDuration}s.`);
     } catch (err) {
       onAgentStatus('summary', 'error', 'Error');
@@ -90,6 +98,7 @@ export class AgentOrchestrator {
       globalScore,
       totalDuration,
       results,
+      parsedSummary,
       finalSummaryText,
       model
     };
@@ -104,4 +113,3 @@ export class AgentOrchestrator {
     return this.parseAgentResponse(rawResponse);
   }
 }
-
