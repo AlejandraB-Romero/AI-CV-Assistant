@@ -46,90 +46,92 @@ Todo el procesamiento se ejecuta con modelos ligeros de código abierto en local
 ---
 
 ## 🧠 Arquitectura del Sistema
-┌───────────────────────────┐
-                  │    Entrada del Usuario    │
-                  │  (Texto / .docx / PDF)    │
-                  └─────────────┬─────────────┘
-                                │
-                                ▼
-                  ┌───────────────────────────┐
-                  │      App Controller       │
-                  └─────────────┬─────────────┘
-                                │
-      ┌─────────────────────────┼─────────────────────────┐
-      ▼                         ▼                         ▼
+
+```text
+                      ┌───────────────────────────┐
+                      │    Entrada del Usuario    │
+                      │  (Texto / .docx / PDF)    │
+                      └─────────────┬─────────────┘
+                                    │
+                                    ▼
+                      ┌───────────────────────────┐
+                      │      App Controller       │
+                      └─────────────┬─────────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          ▼                         ▼                         ▼
 ┌───────────────────┐     ┌───────────────────┐     ┌───────────────────┐
-│ Agent Orchestrator│     │  Radar Service    │     │Cover Letter Agent │
+│ Agent Orchestrator│     │   Radar Service   │     │ Cover Letter Agent│
 └─────────┬─────────┘     └─────────┬─────────┘     └─────────┬─────────┘
-│                         │                         │
-┌───────┴───────┐                 │                         │
-▼               ▼                 ▼                         ▼
-[ Agentes ]   [Orchestrator]   Visualización           Carta de Presentación
-Especiales    & Comparator     Radar 360º               Personalizada
-│               │                 │                         │
-└───────────────┴─────────┬───────┴─────────────────────────┘
-│
-▼
-┌───────────────────────────┐
-│      Storage Service      │
-│   (Persistencia Local)    │
-└────────────┬──────────────┘
-│
-▼
-┌───────────────────────────┐
-│  Interfaz de Usuario / UI │
-│   (Exportación PDF / DOCX)│
-└───────────────────────────┘
+          │                         │                         │
+  ┌───────┴───────┐                 │                         │
+  ▼               ▼                 ▼                         ▼
+[Agentes]     Orchestrator    Visualización          Carta de Presentación
+Especiales    & Comparator     Radar 360º                Personalizada
+  │               │                 │                         │
+  └───────────────┴─────────┬───────┴─────────────────────────┘
+                            │
+                            ▼
+               ┌───────────────────────────┐
+               │      Storage Service      │
+               │   (Persistencia Local)    │
+               └────────────┬──────────────┘
+                            │
+                            ▼
+               ┌───────────────────────────┐
+               │  Interfaz de Usuario / UI │
+               │   (Exportación PDF / DOCX)│
+               └───────────────────────────┘
+```
 
 
 ---
 
 ## 📁 Estructura del Proyecto
 
+```text
 AI-CV-Assistant/
-│
 ├── assets/
 │   ├── css/
-│   │   ├── layout.css             # Estructura principal y Grid/Flexbox
-│   │   └── style.css              # Estilos globales y tematización
+│   │   ├── layout.css                  # Estructura principal y Grid/Flexbox
+│   │   └── style.css                   # Estilos globales y tematización
 │   │
 │   ├── img/
 │   │
 │   └── js/
 │       ├── agents/
-│       │   ├── cover-letter/      # Módulo del generador de cartas de presentación
-│       │   ├── agent.orchestrator.js
-│       │   ├── agent.prompts.js   # Checklists y esquemas JSON por agente
-│       │   ├── ats.agent.js
-│       │   ├── career.agent.js
-│       │   ├── comparator.agent.js
-│       │   ├── grammar.agent.js
-│       │   ├── linkedin.agent.js
-│       │   ├── recruiter.agent.js
-│       │   └── technical.agent.js
+│       │   ├── cover-letter/           # Módulo del generador de cartas de presentación
+│       │   ├── agent.orchestrator.js   # Coordinador del pipeline de agentes
+│       │   ├── agent.prompts.js        # Checklists y esquemas JSON por agente
+│       │   ├── ats.agent.js            # Auditoría ATS
+│       │   ├── career.agent.js         # Coach de carrera
+│       │   ├── comparator.agent.js     # Comparador CV Antiguo vs Nuevo
+│       │   ├── grammar.agent.js        # Corrección gramatical y estilística
+│       │   ├── linkedin.agent.js       # Optimización SEO LinkedIn
+│       │   ├── recruiter.agent.js      # Evaluación de reclutador
+│       │   └── technical.agent.js      # Revisión de stack técnico
 │       │
 │       ├── services/
-│       │   ├── docx.service.js    # Parsing y exportación de archivos .docx
-│       │   ├── ollama.service.js  # Cliente Fetch API para Ollama (JSON Mode)
-│       │   ├── pdf.service.js     # Generación e impresión de informes PDF
-│       │   └── storage.service.js # Servicio de almacenamiento e historial local
+│       │   ├── docx.service.js         # Parsing y exportación de archivos .docx
+│       │   ├── ollama.service.js       # Cliente Fetch API para Ollama (JSON Mode)
+│       │   ├── pdf.service.js          # Generación e impresión de informes PDF
+│       │   └── storage.service.js      # Servicio de almacenamiento e historial local
 │       │
 │       ├── ui/
-│       │   ├── app.controller.js  # Controlador principal de la aplicación
+│       │   ├── app.controller.js       # Controlador principal de la aplicación
 │       │   ├── cover-letter.controller.js # UI del módulo de carta de presentación
-│       │   ├── dom.elements.js    # Mapeo de selectores del DOM
-│       │   ├── radar.service.js   # Generación del gráfico Radar 360º
-│       │   ├── stats.ui.js        # Renderizado de métricas y puntuaciones
-│       │   ├── theme.controller.js# Control del modo claro/oscuro
-│       │   └── toast.ui.js        # Sistema de notificaciones flotantes
+│       │   ├── dom.elements.js         # Mapeo de selectores del DOM
+│       │   ├── radar.service.js        # Generación del gráfico Radar 360º
+│       │   ├── stats.ui.js             # Renderizado de métricas y puntuaciones
+│       │   ├── theme.controller.js     # Control del modo claro/oscuro
+│       │   └── toast.ui.js             # Sistema de notificaciones flotantes
 │       │
-│       └── config.js              # Configuración global y endpoints
+│       └── config.js                   # Configuración global y endpoints
 │
-├── index.html                     # Interfaz SPA
-├── LICENSE                        # Licencia MIT
-└── README.md                      # Documentación del proyecto
-
-
+├── index.html                          # Interfaz SPA
+├── LICENSE                             # Licencia MIT
+└── README.md                           # Documentación del proyecto
+```
 ---
 
 ## ⚙️ Tecnologías Utilizadas
