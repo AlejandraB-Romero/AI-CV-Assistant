@@ -591,3 +591,51 @@ button {
   font-weight: bold;
   margin-bottom: 0.25rem;
 }
+
+/* Tarjeta destacada para la Pregunta de Oro en el Simulador */
+.gold-question-card {
+  border-left: 4px solid var(--status-warning);
+  margin-bottom: 1.5rem;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.gold-question-title {
+  color: #f59e0b;
+}
+
+.gold-question-body {
+  padding: 0.5rem 0;
+}
+
+.gold-question-text {
+  font-size: 1.05rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.gold-question-tip {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Bloque visual para los Proyectos en la Vista Previa del Modal */
+.preview-project-block {
+  border-left: 3px solid var(--accent-primary, #2563eb);
+  padding-left: 0.75rem;
+  margin-bottom: 1rem;
+  background: var(--bg-card-subtle, #f8fafc);
+}
+
+.preview-project-title {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: var(--text-main, #0f172a);
+}
+
+.preview-project-tech {
+  width: auto;
+  font-size: 0.85rem;
+  color: var(--accent-primary, #2563eb);
+  font-weight: 600;
+}
