@@ -1,39 +1,38 @@
-import { STORAGE_KEYS } from '../config/constants.js';
+import { HistoryModel } from '../models/history.model.js';
 
 export class StorageService {
-  static saveAnalysis(analysisData) {
-    const history = this.getHistory();
-    
-    const record = {
-      id: 'analysis_' + Date.now(),
-      timestamp: new Date().toISOString(),
-      formattedDate: new Date().toLocaleString(),
-      fileName: analysisData.fileName || 'CV_Texto_Plano',
-      model: analysisData.model,
-      globalScore: analysisData.globalScore,
-      totalDuration: analysisData.totalDuration,
-      results: analysisData.results,
-      finalSummaryText: analysisData.finalSummaryText
-    };
-
-    history.unshift(record);
-    if (history.length > 10) history.pop();
-
-    localStorage.setItem(STORAGE_KEYS.THEME + '_history', JSON.stringify(history));
-    return record;
+  /**
+   * Guarda un nuevo análisis vinculándolo opcionalmente a un nodo padre (v1 -> v2)
+   */
+  static saveAnalysis(analysisData, parentId = null) {
+    return HistoryModel.saveVersion(analysisData, parentId);
   }
 
+  /**
+   * Recupera todo el historial de análisis/versiones
+   */
   static getHistory() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.THEME + '_history');
-      return data ? JSON.parse(data) : [];
-    } catch (e) {
-      console.error('Error al leer el historial:', e);
-      return [];
-    }
+    return HistoryModel.getAll();
   }
 
+  /**
+   * Obtiene el árbol o linaje completo de versiones asociadas a un CV
+   */
+  static getVersionHistory(versionId) {
+    return HistoryModel.getVersionTree(versionId);
+  }
+
+  /**
+   * Elimina un elemento del historial por su ID
+   */
+  static deleteItem(id) {
+    HistoryModel.deleteVersion(id);
+  }
+
+  /**
+   * Vacía todo el historial
+   */
   static clearHistory() {
-    localStorage.removeItem(STORAGE_KEYS.THEME + '_history');
+    localStorage.removeItem(HistoryModel.STORAGE_KEY);
   }
 }

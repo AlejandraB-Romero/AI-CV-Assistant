@@ -173,7 +173,6 @@ export class AppController {
   }
 
   enableExportButtons() {
-    // Buscar referencias de botones si no estaban asignadas
     const btnDocx = this.btnGenerateDocx || document.getElementById('btnGenerateDocx');
     const btnPdf = this.btnPrintPdf || document.getElementById('btnPrintPdf');
     const btnMd = this.btnExportMd || document.getElementById('btnExportMd');
@@ -222,8 +221,6 @@ export class AppController {
     });
 
     this.updateAgentUI('summary', 'done', 'Finalizado', { summary: data.finalSummaryText });
-
-    // HABILITAR BOTONES AQUÍ
     this.enableExportButtons();
 
     this.historyModal.style.display = 'none';
@@ -300,6 +297,17 @@ export class AppController {
     if (this.dropzone) this.dropzone.style.display = 'block';
   }
 
+  /**
+   * Helper privado para desestructurar strings u objetos de respuesta de Ollama
+   */
+  #formatListItem(item) {
+    if (typeof item === 'string') return item;
+    if (typeof item === 'object' && item !== null) {
+      return item.detail || item.recommendation || item.weakness || item.text || item.description || JSON.stringify(item);
+    }
+    return String(item);
+  }
+
   updateAgentUI(agent, state, badgeText, data) {
     const step = document.getElementById(`step-${agent}`);
     if (step) step.className = `pipeline-step ${state}`;
@@ -337,7 +345,7 @@ export class AppController {
         : (Array.isArray(parsedData.recommendations) ? parsedData.recommendations : []);
 
       const actionListHtml = actionPlan.length
-        ? actionPlan.map(item => `<li style="margin-bottom: 0.4rem;">${item}</li>`).join('')
+        ? actionPlan.map(item => `<li style="margin-bottom: 0.4rem;">${this.#formatListItem(item)}</li>`).join('')
         : `<li>${parsedData.summary || parsedData.summaryText || 'Análisis consolidado.'}</li>`;
 
       output.innerHTML = `
@@ -360,17 +368,17 @@ export class AppController {
         
         ${strengths.length ? `
           <div class="card-section-title" style="color: var(--status-success); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">Puntos Fuertes:</div>
-          <ul class="bullet-list">${strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+          <ul class="bullet-list">${strengths.map(s => `<li>${this.#formatListItem(s)}</li>`).join('')}</ul>
         ` : ''}
 
         ${weaknesses.length ? `
           <div class="card-section-title" style="color: var(--status-danger); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">A Mejorar:</div>
-          <ul class="bullet-list">${weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
+          <ul class="bullet-list">${weaknesses.map(w => `<li>${this.#formatListItem(w)}</li>`).join('')}</ul>
         ` : ''}
 
         ${recommendations.length ? `
           <div class="card-section-title" style="color: var(--accent-primary); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">Recomendaciones:</div>
-          <ul class="bullet-list">${recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
+          <ul class="bullet-list">${recommendations.map(r => `<li>${this.#formatListItem(r)}</li>`).join('')}</ul>
         ` : ''}
       `;
 

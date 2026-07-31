@@ -1,4 +1,3 @@
-import { AGENT_PROMPTS } from '../agents/agent.prompts.js';
 import { DocxService } from '../services/docx.service.js';
 
 export class PreviewController {
@@ -53,9 +52,21 @@ export class PreviewController {
 
     try {
       this.app.addLog('orchestrator', 'Generando versión estructurada para vista previa...');
-      const prompt = AGENT_PROMPTS.REWRITER(cvText, this.app.lastAnalysisData.finalSummaryText);
-      const rawResponse = await this.app.ollamaService.query(model, prompt);
-      this.app.currentRewrittenData = this.app.orchestrator.parseAgentResponse(rawResponse);
+
+      const sectorContext = this.app.lastAnalysisData.sectorContext || {
+        sectorLabel: 'General',
+        targetRole: 'Profesional',
+        candidateName: '',
+        coreCompetencies: [],
+        technicalTools: []
+      };
+
+      this.app.currentRewrittenData = await this.app.orchestrator.rewriteCV(
+        cvText,
+        this.app.lastAnalysisData.finalSummaryText,
+        model,
+        sectorContext
+      );
 
       this.populate(this.app.currentRewrittenData);
       this.open();

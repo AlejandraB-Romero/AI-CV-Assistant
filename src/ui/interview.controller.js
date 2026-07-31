@@ -1,5 +1,3 @@
-import { AGENT_PROMPTS } from '../agents/agent.prompts.js';
-
 export class InterviewController {
   constructor(app) {
     this.app = app;
@@ -40,10 +38,18 @@ export class InterviewController {
     const cvText = this.app.getCVText();
     const model = this.app.modelInput.value;
 
+    const sectorContext = this.app.lastAnalysisData.sectorContext || {
+      sectorLabel: 'General',
+      targetRole: 'Profesional',
+      candidateName: ''
+    };
+
     try {
-      const prompt = AGENT_PROMPTS.INTERVIEW(cvText, this.app.lastAnalysisData.targetRole || '');
-      const rawResponse = await this.app.ollamaService.query(model, prompt);
-      const interviewData = this.app.orchestrator.parseAgentResponse(rawResponse);
+      const interviewData = await this.app.orchestrator.generateInterviewQuestions(
+        cvText,
+        model,
+        sectorContext
+      );
 
       this.renderData(interviewData);
       this.interviewLoading.style.display = 'none';
