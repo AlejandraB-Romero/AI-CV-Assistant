@@ -123,7 +123,7 @@
           <button id="btnExportMd" type="button" class="btn-secondary" disabled>📥 Exportar MD</button>
           <button id="btnExportJson" type="button" class="btn-secondary" disabled>💾 Exportar JSON</button>
         </div>
-      </div> <!-- Se cierra correctamente la cabecera del panel -->
+      </div>
 
       <!-- METRICAS KPI -->
       <div class="dashboard-metrics" style="margin-top: 1rem;">
@@ -278,6 +278,54 @@
             <span class="agent-status-badge done" id="compareScoreBadge">--% Mejora</span>
           </div>
           <div class="agent-output" id="compareOutput">Procesando comparación...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE VISTA PREVIA Y EDICIÓN DE CV -->
+  <div id="previewModal" class="history-modal" style="display: none;">
+    <div class="history-content" style="max-width: 950px; width: 95%;">
+      <div class="history-header">
+        <h3>✨ Vista Previa y Edición del CV Optimizado</h3>
+        <button id="btnClosePreview" class="btn-close">✕</button>
+      </div>
+
+      <div style="padding: 1.25rem;">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          💡 <strong>Tip:</strong> Puedes hacer clic sobre cualquier campo para editar el texto directamente antes de descargar la versión en Word.
+        </p>
+
+        <!-- ÁREA DE VISTA PREVIA EDITABLE -->
+        <div class="cv-paper-preview">
+          <input type="text" id="prevFullName" class="preview-input-title" placeholder="NOMBRE COMPLETO">
+          <input type="text" id="prevTargetRole" class="preview-input-subtitle" placeholder="TITULAR PROFESIONAL">
+
+          <!-- SOBRE MÍ / PERFIL -->
+          <div class="preview-section-title">SOBRE MÍ</div>
+          <textarea id="prevSummary" class="preview-textarea" rows="3" placeholder="Resumen profesional..."></textarea>
+
+          <!-- PROYECTOS DESTACADOS -->
+          <div id="prevProjectsTitle" class="preview-section-title" style="display: none;">PROYECTOS DESTACADOS</div>
+          <div id="prevProjectsContainer"></div>
+
+          <!-- EXPERIENCIA PROFESIONAL -->
+          <div id="prevExpTitle" class="preview-section-title" style="display: none;">EXPERIENCIA PROFESIONAL</div>
+          <div id="prevExperienceContainer"></div>
+
+          <!-- EDUCACIÓN -->
+          <div id="prevEduTitle" class="preview-section-title" style="display: none;">FORMACIÓN Y EDUCACIÓN</div>
+          <div id="prevEducationContainer"></div>
+
+          <!-- HABILIDADES -->
+          <div class="preview-section-title">COMPETENCIAS Y HABILIDADES</div>
+          <input type="text" id="prevSkills" class="preview-input-text">
+        </div>
+
+        <!-- BOTÓN DE DESCARGA DESDE LA VISTA PREVIA -->
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.25rem;">
+          <button id="btnCancelPreview" class="btn-secondary" type="button">Cancelar</button>
+          <button id="btnConfirmDownloadDocx" class="btn-primary" type="button">📥 Descargar en Word (.docx)</button>
         </div>
       </div>
     </div>

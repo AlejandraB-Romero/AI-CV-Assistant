@@ -199,49 +199,48 @@ export const AGENT_PROMPTS = {
   `,
 
  REWRITER: (originalCv, summaryRecommendations) => `
-    [DIRECTRIZ DE ADAPTABILIDAD UNIVERSAL Y REALISMO PROFESIONAL]
-    Actúa como un Redactor Senior de Currículums Multidisciplinar.
-    Tu objetivo es reescribir y optimizar el CV adaptándote FIDELMENTE al sector y perfil profesional que se deduce del CV original (salud, administración, comercio, hostelería, tecnología, servicios, etc.).
+    [INSTRUCCIÓN QUIRÚRGICA DE EXTRACCIÓN MÁXIMA]
+    Eres un parser y redactor experto de CVs. Debes escanear el texto del CV y extraer CADA SECCIÓN SOBERANAMENTE SIN OMITIR NADA.
 
-    REGLAS DE ORO:
-    1. ADAPTACIÓN AL PERFIL REAL: No fuerces vocabulario técnico ni cambies el foco si el CV no es de un perfil tecnológico. Respeta la especialidad original.
-    2. NO INVENTES MÉTRICAS O DATOS FALSOS: Si un puesto era operativo, destaca responsabilidades reales, rigor, trabajo en equipo, atención al cliente o gestión de tiempos sin alucinar porcentajes irresponsables.
-    3. EXTRACTO PROFESIONAL A MEDIDA: Redacta un perfil de 3 a 4 líneas enfocado en los puntos fuertes reales del candidato, su trayectoria y su propuesta de valor para su sector.
-    4. INCLUSIÓN COMPLETA DE SECCIONES: Incluye experiencia, formación académica y habilidades reales mencionadas en el texto original.
+    REGLAS ESTRICTAS DE EXTRAÍDO:
+    1. "projects": Busca explícitamente secciones llamadas "Proyectos", "Proyectos destacados", "Aplicaciones" o nombres de apps (ej: C# Windows Forms, DataSet, BindingSource, aplicaciones web). Extrae CADA proyecto con su nombre, tecnologías usadas y lista de características.
+    2. "techStack": Extrae explícitamente los lenguajes, frameworks, librerías y bases de datos mencionados (ej: C#, SQL, HTML5, CSS3, JavaScript, Bootstrap, WordPress, etc.).
+    3. "tools": Extrae herramientas de software, diseño y entorno (ej: GitHub, Visual Studio, VS Code, XAMPP, Canva, Photoshop, Illustrator, Modelio).
+    4. "aboutMe": Redacta un apartado "Sobre mí" integrando el perfil técnico y creativo del candidato.
 
-    [ESTRUCTURA DE SALIDA STRICT JSON]
+    EJEMPLO DE ESTRUCTURA REQUERIDA EN ESPAÑOL:
     {
-      "fullName": "<Nombre del candidato>",
-      "targetRole": "<Título profesional principal adaptado a su sector real>",
-      "summaryProfile": "<Extracto profesional de 3-4 líneas adaptado a su especialidad>",
-      "experience": [
+      "fullName": "Nombre Detectado",
+      "targetRole": "Título Profesional",
+      "aboutMe": "Texto redactado sobre el candidato...",
+      "projects": [
         {
-          "role": "<Puesto>",
-          "company": "<Empresa/Organización>",
-          "period": "<Fechas>",
-          "achievements": [
-            "<Responsabilidad o logro clave redactado con verbo de acción y enfoque profesional 1>",
-            "<Habilidad práctica o gestión relevante aplicada en el puesto 2>"
+          "name": "Aplicación de gestión en C#",
+          "techStack": "C#, Windows Forms, SQL",
+          "description": [
+            "Gestión de presupuestos y perfiles técnicos",
+            "Validación de fechas y precios por hora"
           ]
         }
       ],
+      "experience": [],
       "education": [
         {
-          "degree": "<Titulación / Certificación>",
-          "institution": "<Centro educativo / Escuela>",
-          "period": "<Fechas o año de finalización>",
-          "details": [
-            "<Competencia clave o aspecto relevante desarrollado durante la formación 1>"
-          ]
+          "degree": "FP Superior DAW",
+          "institution": "IES Mare Nostrum",
+          "period": "En curso"
         }
       ],
-      "skills": ["<Habilidad/Herramienta 1>", "<Habilidad 2>", "<Competencia profesional 3>"]
+      "techStack": ["C#", "SQL", "HTML5", "CSS3", "JavaScript", "Bootstrap"],
+      "tools": ["GitHub", "Visual Studio", "VS Code", "XAMPP", "Photoshop", "Illustrator"],
+      "skills": ["Creatividad", "Trabajo en equipo", "Resolución de problemas"]
     }
 
-    --- TEXTO DEL CV ORIGINAL ---
+    --- CV ORIGINAL A ANALIZAR ---
     ${originalCv}
 
-    --- PLAN Y RECOMENDACIONES A APLICAR ---
+    --- RECOMENDACIONES ---
     ${summaryRecommendations}
   `
+
 };

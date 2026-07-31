@@ -11,6 +11,7 @@ export class AppController {
     this.extractedPdfText = '';
     this.activeTab = 'pdfTab';
     this.lastAnalysisData = null;
+    this.currentRewrittenData = null; // Almacenará los datos temporales del modal
 
     this.initDOM();
     this.bindEvents();
@@ -52,6 +53,20 @@ export class AppController {
     this.compareScoreBadge = document.getElementById('compareScoreBadge');
     this.compareOutput = document.getElementById('compareOutput');
 
+    // Modal Vista Previa y Edición CV
+    this.previewModal = document.getElementById('previewModal');
+    this.btnClosePreview = document.getElementById('btnClosePreview');
+    this.btnCancelPreview = document.getElementById('btnCancelPreview');
+    this.btnConfirmDownloadDocx = document.getElementById('btnConfirmDownloadDocx');
+
+    this.prevFullName = document.getElementById('prevFullName');
+    this.prevTargetRole = document.getElementById('prevTargetRole');
+    this.prevSummary = document.getElementById('prevSummary');
+    this.prevProjectsContainer = document.getElementById('prevProjectsContainer');
+    this.prevExperienceContainer = document.getElementById('prevExperienceContainer');
+    this.prevEducationContainer = document.getElementById('prevEducationContainer');
+    this.prevSkills = document.getElementById('prevSkills');
+
     this.consoleLogs = document.getElementById('consoleLogs');
     this.ollamaStatusEl = document.getElementById('ollamaStatus');
     this.ollamaStatusText = document.getElementById('ollamaStatusText');
@@ -63,10 +78,22 @@ export class AppController {
   }
 
   bindEvents() {
-    // Exportación a Markdown
+    // Exportación a Markdown y JSON
     if (this.btnExportMd) {
       this.btnExportMd.addEventListener('click', () => {
         if (this.lastAnalysisData) ExportService.exportToMarkdown(this.lastAnalysisData);
+      });
+    }
+
+    if (this.btnExportJson) {
+      this.btnExportJson.addEventListener('click', () => {
+        if (this.lastAnalysisData) ExportService.exportToJSON(this.lastAnalysisData);
+      });
+    }
+
+    if (this.btnPrintPdf) {
+      this.btnPrintPdf.addEventListener('click', () => {
+        window.print();
       });
     }
 
@@ -83,7 +110,7 @@ export class AppController {
       });
     }
 
-    // Ejecutar Análisis Diferencial
+    // Ejecutar Análisis Diferencial (Comparador)
     if (this.btnRunComparison) {
       this.btnRunComparison.addEventListener('click', async () => {
         const oldText = this.oldCvText.value.trim();
@@ -127,7 +154,7 @@ export class AppController {
       });
     }
 
-    // Generar Documento Word (.docx) - ¡Independiente y Desanidado!
+    // 1. Abrir Vista Previa del CV al pulsar "Generar Word (.docx)"
     if (this.btnGenerateDocx) {
       this.btnGenerateDocx.addEventListener('click', async () => {
         if (!this.lastAnalysisData) return;
@@ -136,22 +163,22 @@ export class AppController {
         const model = this.modelInput.value;
 
         this.btnGenerateDocx.disabled = true;
-        this.btnGenerateDocx.textContent = '⏳ Generando documento .docx...';
+        this.btnGenerateDocx.textContent = '⏳ Redactando borrador...';
 
         try {
-          this.addLog('orchestrator', 'Redactando versión optimizada en formato Word...');
+          this.addLog('orchestrator', 'Generando versión estructurada para vista previa...');
 
-          // 1. Pedir a Ollama la reescritura estructurada
           const prompt = AGENT_PROMPTS.REWRITER(cvText, this.lastAnalysisData.finalSummaryText);
           const rawResponse = await this.ollamaService.query(model, prompt);
-          const rewrittenData = this.orchestrator.parseAgentResponse(rawResponse);
+          this.currentRewrittenData = this.orchestrator.parseAgentResponse(rawResponse);
 
-          // 2. Generar y descargar el archivo .docx
-          await DocxService.generateAndDownload(rewrittenData, `CV_Optimizado_${Date.now()}.docx`);
-          this.addLog('sys', '¡Archivo Word (.docx) generado y descargado con éxito!');
+          // Cargar datos en el Modal de Vista Previa
+          this.populatePreviewModal(this.currentRewrittenData);
+          this.previewModal.style.display = 'flex';
+
         } catch (err) {
-          alert(`Error al generar Word: ${err.message}`);
-          this.addLog('error', `Error al generar .docx: ${err.message}`);
+          alert(`Error al generar borrador: ${err.message}`);
+          this.addLog('error', `Error en reescritura: ${err.message}`);
         } finally {
           this.btnGenerateDocx.disabled = false;
           this.btnGenerateDocx.textContent = '✨ Generar Word (.docx)';
@@ -159,19 +186,37 @@ export class AppController {
       });
     }
 
-    // Exportaciones adicionales e Historial
-    if (this.btnExportJson) {
-      this.btnExportJson.addEventListener('click', () => {
-        if (this.lastAnalysisData) ExportService.exportToJSON(this.lastAnalysisData);
+    // 2. Control del Modal de Vista Previa (Cerrar / Cancelar)
+    if (this.btnClosePreview) {
+      this.btnClosePreview.addEventListener('click', () => this.previewModal.style.display = 'none');
+    }
+
+    if (this.btnCancelPreview) {
+      this.btnCancelPreview.addEventListener('click', () => this.previewModal.style.display = 'none');
+    }
+
+    // 3. Confirmar y Descargar Word con los cambios manuales del usuario
+    if (this.btnConfirmDownloadDocx) {
+      this.btnConfirmDownloadDocx.addEventListener('click', async () => {
+        const editedData = this.collectDataFromPreview();
+
+        this.btnConfirmDownloadDocx.disabled = true;
+        this.btnConfirmDownloadDocx.textContent = '⏳ Compilando .docx...';
+
+        try {
+          await DocxService.generateAndDownload(editedData, `CV_${editedData.fullName.replace(/\s+/g, '_')}.docx`);
+          this.addLog('sys', '¡Archivo Word (.docx) personalizado descargado con éxito!');
+          this.previewModal.style.display = 'none';
+        } catch (err) {
+          alert(`Error al guardar documento: ${err.message}`);
+        } finally {
+          this.btnConfirmDownloadDocx.disabled = false;
+          this.btnConfirmDownloadDocx.textContent = '📥 Descargar en Word (.docx)';
+        }
       });
     }
 
-    if (this.btnPrintPdf) {
-      this.btnPrintPdf.addEventListener('click', () => {
-        window.print();
-      });
-    }
-
+    // Controles de Historial
     if (this.btnHistory) {
       this.btnHistory.addEventListener('click', () => this.renderHistoryModal());
     }
@@ -187,6 +232,9 @@ export class AppController {
       }
       if (e.target === this.compareModal) {
         this.compareModal.style.display = 'none';
+      }
+      if (e.target === this.previewModal) {
+        this.previewModal.style.display = 'none';
       }
     });
 
@@ -266,6 +314,158 @@ export class AppController {
         }
       });
     }
+  }
+
+  // Métodos auxiliares de la vista previa
+  populatePreviewModal(data) {
+    if (!data) return;
+    this.prevFullName.value = data.fullName || '';
+    this.prevTargetRole.value = data.targetRole || '';
+    this.prevSummary.value = data.aboutMe || data.summaryProfile || '';
+
+    // Unificar Habilidades, Stack y Herramientas para la vista previa
+    const allSkills = [
+      ...(Array.isArray(data.techStack) ? data.techStack : []),
+      ...(Array.isArray(data.tools) ? data.tools : []),
+      ...(Array.isArray(data.skills) ? data.skills : [])
+    ];
+    this.prevSkills.value = [...new Set(allSkills)].join(' • ');
+
+    // Renderizar Proyectos Destacados
+    if (this.prevProjectsContainer) {
+      if (Array.isArray(data.projects) && data.projects.length) {
+        this.prevProjectsContainer.style.display = 'block';
+        if (this.prevProjectsContainer.previousElementSibling) {
+          this.prevProjectsContainer.previousElementSibling.style.display = 'block';
+        }
+        this.prevProjectsContainer.innerHTML = data.projects.map((proj, idx) => `
+          <div class="preview-exp-block" style="border-left: 3px solid #2563eb; padding-left: 0.75rem; margin-bottom: 1rem;">
+            <div class="preview-exp-header">
+              <input type="text" class="preview-input-title" style="font-size: 1rem; font-weight: bold;" value="${proj.name || ''}" data-proj-name="${idx}">
+              <input type="text" class="preview-input-text" style="width: auto; font-size: 0.85rem; color: #2563eb; font-weight: 600;" value="${proj.techStack || ''}" data-proj-tech="${idx}">
+            </div>
+            <textarea class="preview-textarea" rows="2" data-proj-desc="${idx}">${(proj.description || []).join('\n')}</textarea>
+          </div>
+        `).join('');
+      } else {
+        this.prevProjectsContainer.innerHTML = '';
+        if (this.prevProjectsContainer.previousElementSibling) {
+          this.prevProjectsContainer.previousElementSibling.style.display = 'none';
+        }
+      }
+    }
+
+    // Renderizar Experiencia
+    if (this.prevExperienceContainer) {
+      if (Array.isArray(data.experience) && data.experience.length) {
+        this.prevExperienceContainer.style.display = 'block';
+        if (this.prevExperienceContainer.previousElementSibling) {
+          this.prevExperienceContainer.previousElementSibling.style.display = 'block';
+        }
+        this.prevExperienceContainer.innerHTML = data.experience.map((exp, idx) => `
+          <div class="preview-exp-block">
+            <div class="preview-exp-header">
+              <input type="text" class="preview-input-title" style="font-size: 1rem;" value="${exp.role || ''} ${exp.company ? '— ' + exp.company : ''}" data-exp-role="${idx}">
+              <input type="text" class="preview-input-text" style="width: auto; text-align: right;" value="${exp.period || ''}" data-exp-period="${idx}">
+            </div>
+            <textarea class="preview-textarea" rows="2" data-exp-achievements="${idx}">${(exp.achievements || []).join('\n')}</textarea>
+          </div>
+        `).join('');
+      } else {
+        this.prevExperienceContainer.innerHTML = '';
+        if (this.prevExperienceContainer.previousElementSibling) {
+          this.prevExperienceContainer.previousElementSibling.style.display = 'none';
+        }
+      }
+    }
+
+    // Renderizar Educación
+    if (this.prevEducationContainer) {
+      if (Array.isArray(data.education) && data.education.length) {
+        this.prevEducationContainer.style.display = 'block';
+        if (this.prevEducationContainer.previousElementSibling) {
+          this.prevEducationContainer.previousElementSibling.style.display = 'block';
+        }
+        this.prevEducationContainer.innerHTML = data.education.map((edu, idx) => `
+          <div class="preview-exp-block">
+            <div class="preview-exp-header">
+              <input type="text" class="preview-input-title" style="font-size: 0.95rem;" value="${edu.degree || ''} ${edu.institution ? '| ' + edu.institution : ''}" data-edu-title="${idx}">
+              <input type="text" class="preview-input-text" style="width: auto; text-align: right;" value="${edu.period || ''}" data-edu-period="${idx}">
+            </div>
+          </div>
+        `).join('');
+      } else {
+        this.prevEducationContainer.innerHTML = '';
+        if (this.prevEducationContainer.previousElementSibling) {
+          this.prevEducationContainer.previousElementSibling.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  collectDataFromPreview() {
+    const skillsArray = this.prevSkills.value.split('•').map(s => s.trim()).filter(Boolean);
+
+    const projects = [];
+    if (this.prevProjectsContainer) {
+      this.prevProjectsContainer.querySelectorAll('.preview-exp-block').forEach((block, idx) => {
+        const name = block.querySelector(`[data-proj-name="${idx}"]`)?.value || '';
+        const techStack = block.querySelector(`[data-proj-tech="${idx}"]`)?.value || '';
+        const descRaw = block.querySelector(`[data-proj-desc="${idx}"]`)?.value || '';
+
+        projects.push({
+          name: name,
+          techStack: techStack,
+          description: descRaw.split('\n').map(d => d.trim()).filter(Boolean)
+        });
+      });
+    }
+
+    const experience = [];
+    if (this.prevExperienceContainer) {
+      this.prevExperienceContainer.querySelectorAll('.preview-exp-block').forEach((block, idx) => {
+        const roleComp = block.querySelector(`[data-exp-role="${idx}"]`)?.value || '';
+        const period = block.querySelector(`[data-exp-period="${idx}"]`)?.value || '';
+        const achievementsRaw = block.querySelector(`[data-exp-achievements="${idx}"]`)?.value || '';
+
+        const [role, company] = roleComp.split('—').map(s => s.trim());
+
+        experience.push({
+          role: role || roleComp,
+          company: company || '',
+          period: period,
+          achievements: achievementsRaw.split('\n').map(a => a.trim()).filter(Boolean)
+        });
+      });
+    }
+
+    const education = [];
+    if (this.prevEducationContainer) {
+      this.prevEducationContainer.querySelectorAll('.preview-exp-block').forEach((block, idx) => {
+        const titleInst = block.querySelector(`[data-edu-title="${idx}"]`)?.value || '';
+        const period = block.querySelector(`[data-edu-period="${idx}"]`)?.value || '';
+        const [degree, institution] = titleInst.split('|').map(s => s.trim());
+
+        education.push({
+          degree: degree || titleInst,
+          institution: institution || '',
+          period: period
+        });
+      });
+    }
+
+    return {
+      fullName: this.prevFullName.value,
+      targetRole: this.prevTargetRole.value,
+      aboutMe: this.prevSummary.value,
+      contactInfo: this.currentRewrittenData?.contactInfo || {},
+      projects: projects,
+      experience: experience,
+      education: education,
+      certifications: this.currentRewrittenData?.certifications || [],
+      languages: this.currentRewrittenData?.languages || [],
+      skills: skillsArray
+    };
   }
 
   enableExportButtons() {

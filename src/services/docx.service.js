@@ -5,23 +5,38 @@ export class DocxService {
 
     const { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
 
-    // Sanitización adaptativa
+    const allCompetencies = [
+      ...(Array.isArray(cvData?.techStack) ? cvData.techStack : []),
+      ...(Array.isArray(cvData?.tools) ? cvData.tools : []),
+      ...(Array.isArray(cvData?.skills) ? cvData.skills : [])
+    ];
+    const safeSkills = [...new Set(allCompetencies)];
+
+    const contact = cvData?.contactInfo || {};
+    const contactLine = [contact.email, contact.phone, contact.location, contact.links]
+      .filter(Boolean)
+      .join('  |  ');
+
     const safeData = {
       fullName: (cvData?.fullName || 'CANDIDATO').toUpperCase(),
       targetRole: (cvData?.targetRole || 'PERFIL PROFESIONAL').toUpperCase(),
-      summaryProfile: cvData?.summaryProfile || 'Profesional comprometido y orientado a resultados, con sólida experiencia práctica y capacidad de adaptación a diversos entornos de trabajo. Destacado por su responsabilidad, eficacia en la resolución de tareas y trabajo en equipo.',
+      contactLine: contactLine,
+      aboutMe: cvData?.aboutMe || cvData?.summaryProfile || '',
+      projects: Array.isArray(cvData?.projects) ? cvData.projects : [],
       experience: Array.isArray(cvData?.experience) ? cvData.experience : [],
       education: Array.isArray(cvData?.education) ? cvData.education : [],
+      certifications: Array.isArray(cvData?.certifications) ? cvData.certifications : [],
+      languages: Array.isArray(cvData?.languages) ? cvData.languages : [],
       skills: Array.isArray(cvData?.skills) ? cvData.skills : []
     };
 
     const doc = new Document({
       sections: [{
         properties: {
-          page: { margin: { top: 1152, bottom: 1152, left: 1152, right: 1152 } } // Margen estándar de 2cm
+          page: { margin: { top: 1152, bottom: 1152, left: 1152, right: 1152 } }
         },
         children: [
-          // ENCABEZADO PRINCIPAL (Nombre + Puesto)
+          // ENCABEZADO: NOMBRE Y PUESTO
           new Paragraph({
             alignment: AlignmentType.LEFT,
             children: [
@@ -30,23 +45,50 @@ export class DocxService {
           }),
           new Paragraph({
             alignment: AlignmentType.LEFT,
-            spacing: { after: 200 },
+            spacing: { after: 60 },
             children: [
               new TextRun({ text: safeData.targetRole, bold: true, size: 20, font: 'Calibri', color: '2563EB' })
             ]
           }),
 
-          // 1. PERFIL PROFESIONAL
-          this.createSectionTitle(docx, 'PERFIL PROFESIONAL'),
-          new Paragraph({
-            spacing: { before: 80, after: 200 },
-            children: [
-              new TextRun({ text: safeData.summaryProfile, size: 20, font: 'Calibri', color: '334155' })
-            ]
-          }),
+          // DATOS DE CONTACTO (Si existen)
+          ...(safeData.contactLine ? [
+            new Paragraph({
+              alignment: AlignmentType.LEFT,
+              spacing: { after: 200 },
+              children: [
+                new TextRun({ text: safeData.contactLine, size: 18, font: 'Calibri', color: '64748B' })
+              ]
+            })
+          ] : []),
 
-          // 2. EXPERIENCIA PROFESIONAL
+          // 1. SOBRE MÍ
+          ...(safeData.aboutMe ? [
+            this.createSectionTitle(docx, 'SOBRE MÍ'),
+            new Paragraph({
+              spacing: { before: 80, after: 200 },
+              children: [
+                new TextRun({ text: safeData.aboutMe, size: 20, font: 'Calibri', color: '334155' })
+              ]
+            })
+          ] : []),
+
+          // 2. PROYECTOS TÉCNICOS / DESTACADOS
+          ...(safeData.projects.length ? [
+            this.createSectionTitle(docx, 'PROYECTOS DESTACADOS'),
+            ...safeData.projects.flatMap(proj => [
+              this.createDualRow(docx, proj.name || '', proj.techStack || ''),
+              ...(Array.isArray(proj.description) ? proj.description : []).map(desc => new Paragraph({
+                bullet: { level: 0 },
+                spacing: { after: 30 },
+                children: [new TextRun({ text: desc, size: 19, font: 'Calibri', color: '334155' })]
+              }))
+            ])
+          ] : []),
+
+          // 3. EXPERIENCIA PROFESIONAL
           ...(safeData.experience.length ? [
+            new Paragraph({ spacing: { before: 120 } }),
             this.createSectionTitle(docx, 'EXPERIENCIA PROFESIONAL'),
             ...safeData.experience.flatMap(exp => [
               this.createDualRow(docx, `${exp.role || ''} ${exp.company ? '— ' + exp.company : ''}`, exp.period || ''),
@@ -58,28 +100,47 @@ export class DocxService {
             ])
           ] : []),
 
-          // 3. FORMACIÓN Y EDUCACIÓN
+          // 4. FORMACIÓN Y EDUCACIÓN
           ...(safeData.education.length ? [
             new Paragraph({ spacing: { before: 120 } }),
             this.createSectionTitle(docx, 'EDUCACIÓN Y FORMACIÓN'),
             ...safeData.education.flatMap(edu => [
-              this.createDualRow(docx, `${edu.degree || ''} ${edu.institution ? '| ' + edu.institution : ''}`, edu.period || ''),
-              ...(Array.isArray(edu.details) ? edu.details : []).map(det => new Paragraph({
-                bullet: { level: 0 },
-                spacing: { after: 30 },
-                children: [new TextRun({ text: det, size: 19, font: 'Calibri', color: '334155' })]
-              }))
+              this.createDualRow(docx, `${edu.degree || ''} ${edu.institution ? '| ' + edu.institution : ''}`, edu.period || '')
             ])
           ] : []),
 
-          // 4. COMPETENCIAS Y HABILIDADES
+          // 5. CURSOS Y CERTIFICACIONES
+          ...(safeData.certifications.length ? [
+            new Paragraph({ spacing: { before: 120 } }),
+            this.createSectionTitle(docx, 'CURSOS Y CERTIFICACIONES'),
+            new Paragraph({
+              spacing: { before: 100, after: 150 },
+              children: [
+                new TextRun({ text: safeData.certifications.join('  •  '), size: 20, font: 'Calibri', color: '1E293B' })
+              ]
+            })
+          ] : []),
+
+          // 6. COMPETENCIAS Y HABILIDADES
           ...(safeData.skills.length ? [
             new Paragraph({ spacing: { before: 120 } }),
             this.createSectionTitle(docx, 'COMPETENCIAS Y HABILIDADES'),
             new Paragraph({
-              spacing: { before: 100, after: 200 },
+              spacing: { before: 100, after: 150 },
               children: [
                 new TextRun({ text: safeData.skills.join('  •  '), size: 20, font: 'Calibri', color: '1E293B' })
+              ]
+            })
+          ] : []),
+
+          // 7. IDIOMAS
+          ...(safeData.languages.length ? [
+            new Paragraph({ spacing: { before: 120 } }),
+            this.createSectionTitle(docx, 'IDIOMAS'),
+            new Paragraph({
+              spacing: { before: 100, after: 200 },
+              children: [
+                new TextRun({ text: safeData.languages.join('  •  '), size: 20, font: 'Calibri', color: '1E293B' })
               ]
             })
           ] : [])

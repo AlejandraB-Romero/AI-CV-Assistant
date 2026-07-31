@@ -30,31 +30,20 @@ export class OllamaService {
     }
   }
 
+  // En src/services/ollama.service.js
   async query(model, prompt) {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: model,
-          prompt: prompt,
-          stream: false
-        })
-      });
-
-      if (response.status === 404) {
-        throw new Error(`El modelo "${model}" no está descargado. Ejecuta: ollama pull ${model}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP ${response.status}: Verifica el estado de Ollama.`);
-      }
-
-      const data = await response.json();
-      return data.response;
-    } catch (error) {
-      console.error('OllamaService Query Error:', error);
-      throw error;
-    }
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        prompt: prompt,
+        stream: false,
+        format: 'json' // <--- ESTO OBLIGA A OLLAMA A RESPETAR EL SCHEMA
+      })
+    });
+    const data = await response.json();
+    return data.response;
   }
+
 }
