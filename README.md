@@ -1,8 +1,8 @@
 # 🤖 AI CV Assistant
 
-> Sistema multi-agente de Inteligencia Artificial ejecutable de forma 100% local con Ollama para la auditoría, optimización y refactorización determinista de Currículums Vitae.
+> Sistema multi-agente de Inteligencia Artificial ejecutable de forma 100% local con Ollama para la auditoría, optimización, análisis Radar 360º y generación de Cartas de Presentación adaptadas.
 
-![Versión](https://img.shields.io/badge/versión-2.5-blue)
+![Versión](https://img.shields.io/badge/versión-3.0-blue)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)
 ![HTML5](https://img.shields.io/badge/HTML5-orange)
 ![CSS3](https://img.shields.io/badge/CSS3-blue)
@@ -14,15 +14,17 @@
 
 ## 📖 Descripción
 
-**AI CV Assistant** es una plataforma web modular impulsada por un panel de **8 agentes de IA especializados** que analizan, auditan y refactorizan Currículums Vitae desde múltiples dimensiones profesionales.
+**AI CV Assistant** es una plataforma web modular impulsada por un panel de **agentes de IA especializados** que analizan, auditan y refactorizan Currículums Vitae desde múltiples dimensiones profesionales.
 
-A diferencia de las herramientas genéricas que dependen de roles abstractos ("actúa como un experto"), el sistema utiliza **prompts deterministas basados en checklists explícitas de comprobación y salidas en JSON estricto**. Esto garantiza resultados coherentes, precisos y sin alucinaciones, permitiendo ejecutar la aplicación con modelos ligeros de código abierto en local (**Qwen 2.5 Coder**, **DeepSeek-R1**, **Llama 3.3**) sin enviar datos a servidores externos.
+A diferencia de las herramientas genéricas que dependen de roles abstractos ("actúa como un experto"), el sistema utiliza **prompts deterministas basados en checklists explícitas de comprobación y salidas en JSON estricto**. Además de la auditoría y comparación de versiones, la versión 3.0 incorpora un **Análisis Visual Radar 360º** de competencias y un módulo dedicado para la **Generación Personalizada de Cartas de Presentación** (*Cover Letter*).
+
+Todo el procesamiento se ejecuta con modelos ligeros de código abierto en local (**Qwen 2.5 Coder**, **DeepSeek-R1**, **Llama 3.3**) sin enviar datos a servidores externos.
 
 ---
 
 ## ✨ Características Principales
 
-- 🤖 **Orquestación de 8 Agentes Especializados:**
+- 🤖 **Orquestación de Agentes Especializados:**
   - 📊 **ATS Agent:** Audit de legibilidad sintáctica, densidad de palabras clave y formato procesable por ATS.
   - 👨‍💼 **Recruiter Agent:** Evaluación del impacto narrativo, verbos de acción y cuantificación de logros (fórmula PAR).
   - ✍️ **Grammar & Style Agent:** Corrección ortográfica, consistencia temporal y eliminación de adjetivos vacíos.
@@ -30,18 +32,16 @@ A diferencia de las herramientas genéricas que dependen de roles abstractos ("a
   - 🔗 **LinkedIn & SEO Agent:** Conversión de contenido a titular, extracto "Acerca De" y optimización para búsquedas.
   - 📈 **Career Coach Agent:** Evaluación de la progresión de responsabilidades, estabilidad y trayectoria.
   - 🎭 **Orchestrator Agent:** Síntesis ejecutiva y generación de un plan de acción prioritario en 5 pasos.
-  - ⚖️ **Comparator Agent:** Auditoría comparativa cuantitativa y cualitativa entre el "CV Antiguo" y el "CV Optimizado".
+  - ⚖️ **Comparator Agent:** Auditoría comparativa cuantitativa y cualitativa entre versiones del CV.
+- 🎯 **Radar 360º de Competencias:** Visualización gráfica e interactiva de las puntuaciones obtenidas en cada dimensión del análisis.
+- ✉️ **Generador de Carta de Presentación:** Módulo específico para redactar cartas adaptadas a la vacante objetivo basadas en el perfil analizado.
+- 💾 **Persistencia con Storage Service:** Gestión y guardado local del historial de análisis y estados de la aplicación.
 - 📄 **Soporte Multi-formato (Entrada y Salida):**
   - Parsing y lectura directa de documentos **.docx** y texto plano.
   - Exportación de informes optimizados en formato **PDF** y **.docx**.
-- 🛠️ **Arquitectura Model-Agnostic (Ollama Local):**
-  - Diseñado para funcionar de manera óptima en modelos locales como `qwen2.5-coder:7b`, `deepseek-r1:8b` o `llama3.3`.
-  - Respuestas estructuradas mediante contratos JSON estrictos y checklists deterministas.
-- 🎨 **Interfaz y Experiencia de Usuario:**
-  - 🌙 Modo claro / modo oscuro persistente.
-  - 🔔 Sistema dinámico de notificaciones Toast y feedback de estado.
-  - 📊 Métricas de coincidencia (*improvement score*) y desglose por tarjetas visuales.
-- 🔒 **Privacidad Total (Privacy First):** Todo el procesamiento se ejecuta en el hardware del usuario mediante Ollama. Ningún dato sale de la máquina.
+- 🛠️ **Arquitectura Model-Agnostic (Ollama Local):** Respuestas estructuradas mediante contratos JSON estrictos independientes del modelo.
+- 🎨 **Interfaz y Experiencia de Usuario:** Modo claro / modo oscuro persistente, sistema de notificaciones Toast y diseño CSS modular.
+- 🔒 **Privacidad Total (Privacy First):** Procesamiento 100% en local sin intermediarios ni consumo de APIs de pago.
 
 ---
 
@@ -56,27 +56,23 @@ A diferencia de las herramientas genéricas que dependen de roles abstractos ("a
                   │      App Controller       │
                   └─────────────┬─────────────┘
                                 │
-                                ▼
-                  ┌───────────────────────────┐
-                  │    Agent Orchestrator     │
-                  └─────────────┬─────────────┘
-                                │
- ┌──────────┬───────────┼───────────┼───────────┬──────────┐
- ▼          ▼           ▼           ▼           ▼          ▼
-📊 ATS    👨‍💼 Recruiter  ✍️ Grammar  💻 Technical 🔗 LinkedIn 📈 Career
-│          │           │           │           │          │
-└──────────┴───────────┼───────────┴───────────┴──────────┘
+      ┌─────────────────────────┼─────────────────────────┐
+      ▼                         ▼                         ▼
+┌───────────────────┐     ┌───────────────────┐     ┌───────────────────┐
+│ Agent Orchestrator│     │  Radar Service    │     │Cover Letter Agent │
+└─────────┬─────────┘     └─────────┬─────────┘     └─────────┬─────────┘
+│                         │                         │
+┌───────┴───────┐                 │                         │
+▼               ▼                 ▼                         ▼
+[ Agentes ]   [Orchestrator]   Visualización           Carta de Presentación
+Especiales    & Comparator     Radar 360º               Personalizada
+│               │                 │                         │
+└───────────────┴─────────┬───────┴─────────────────────────┘
 │
 ▼
 ┌───────────────────────────┐
-│    🎭 Orchestrator Agent  │
-│   (Plan de Acción 5 Pasos)│
-└────────────┬──────────────┘
-│
-▼
-┌───────────────────────────┐
-│  ⚖️ Comparator Agent     │
-│ (Auditoría CV Antiguo/Nuevo)
+│      Storage Service      │
+│   (Persistencia Local)    │
 └────────────┬──────────────┘
 │
 ▼
@@ -94,63 +90,63 @@ AI-CV-Assistant/
 │
 ├── assets/
 │   ├── css/
-│   │   └── style.css
+│   │   ├── layout.css             # Estructura principal y Grid/Flexbox
+│   │   └── style.css              # Estilos globales y tematización
 │   │
 │   ├── img/
 │   │
 │   └── js/
 │       ├── agents/
-│       │   ├── agent.prompts.js      # Definición de checklists y esquemas JSON por agente
-│       │   ├── ats.agent.js          # Agente ATS Audit
-│       │   ├── recruiter.agent.js    # Agente Recruiter
-│       │   ├── grammar.agent.js      # Agente Corrección Gramatical
-│       │   ├── technical.agent.js    # Agente Arquitecto Técnico
-│       │   ├── linkedin.agent.js     # Agente Personal Branding & SEO
-│       │   ├── career.agent.js       # Agente Career Coach
-│       │   ├── orchestrator.agent.js # Agente Orquestador y Síntesis
-│       │   └── comparator.agent.js   # Agente Comparador CV Antiguo vs Nuevo
+│       │   ├── cover-letter/      # Módulo del generador de cartas de presentación
+│       │   ├── agent.orchestrator.js
+│       │   ├── agent.prompts.js   # Checklists y esquemas JSON por agente
+│       │   ├── ats.agent.js
+│       │   ├── career.agent.js
+│       │   ├── comparator.agent.js
+│       │   ├── grammar.agent.js
+│       │   ├── linkedin.agent.js
+│       │   ├── recruiter.agent.js
+│       │   └── technical.agent.js
 │       │
 │       ├── services/
-│       │   ├── ollama.service.js     # Cliente Fetch API para Ollama (JSON Mode)
-│       │   ├── pdf.service.js        # Generación e impresión de informes PDF
-│       │   └── docx.service.js       # Parsing y exportación de archivos .docx
+│       │   ├── docx.service.js    # Parsing y exportación de archivos .docx
+│       │   ├── ollama.service.js  # Cliente Fetch API para Ollama (JSON Mode)
+│       │   ├── pdf.service.js     # Generación e impresión de informes PDF
+│       │   └── storage.service.js # Servicio de almacenamiento e historial local
 │       │
 │       ├── ui/
-│       │   ├── app.controller.js     # Controlador principal de la app
-│       │   ├── dom.elements.js       # Mapeo de selectores del DOM
-│       │   ├── stats.ui.js           # Renderizado de puntuaciones y métricas
-│       │   ├── theme.controller.js   # Gestión del modo claro/oscuro
-│       │   └── toast.ui.js           # Sistema de notificaciones flotantes
+│       │   ├── app.controller.js  # Controlador principal de la aplicación
+│       │   ├── cover-letter.controller.js # UI del módulo de carta de presentación
+│       │   ├── dom.elements.js    # Mapeo de selectores del DOM
+│       │   ├── radar.service.js   # Generación del gráfico Radar 360º
+│       │   ├── stats.ui.js        # Renderizado de métricas y puntuaciones
+│       │   ├── theme.controller.js# Control del modo claro/oscuro
+│       │   └── toast.ui.js        # Sistema de notificaciones flotantes
 │       │
-│       └── config.js                 # Configuración general y endpoints de Ollama
+│       └── config.js              # Configuración global y endpoints
 │
-├── index.html                        # Interfaz principal SPA
-└── README.md                         # Documentación del repositorio
+├── index.html                     # Interfaz SPA
+├── LICENSE                        # Licencia MIT
+└── README.md                      # Documentación del proyecto
 
 
 ---
 
 ## ⚙️ Tecnologías Utilizadas
 
-### Frontend & Lógica
-- **HTML5 & CSS3:** Diseño adaptativo con variables CSS para tematización (*dark/light mode*).
-- **JavaScript (ES6+):** Arquitectura modular nativa mediante ES Modules.
+### Frontend & Visualización
+- **HTML5 & CSS3 (Layout modular):** Estructura responsiva con separación limpia de diseño en `layout.css` y `style.css`.
+- **JavaScript (ES6+):** Arquitectura totalmente modular orientada a servicios y controladores.
+- **Radar 360º Service:** Renderizado visual de competencias multidimensionales.
 
-### Inteligencia Artificial & Modelos Local
-- **Ollama:** Motor de ejecución de modelos LLM en local.
-- **Modelos Recomendados:**
-  - `qwen2.5-coder:7b` / `qwen2.5-coder:14b` *(Excelente en estructuración y lógica)*
-  - `deepseek-r1:8b` *(Razonamiento de fondo)*
-  - `llama3.3` / `llama3.2`
+### Inteligencia Artificial & Persistencia
+- **Ollama:** Motor local de ejecución de modelos LLM.
+- **Modelos Recomendados:** `qwen2.5-coder:7b`, `deepseek-r1:8b`, `llama3.3`.
+- **Storage Service:** Gestión del estado e historial en `LocalStorage`.
 
-### Librerías Integradas
-- **`html2pdf.js`:** Conversión e impresión limpia del informe a PDF.
-- **`mammoth.js` / `docx`:** Extracción de texto y generación de archivos `.docx`.
-
-### APIs Nativas del Navegador
-- **Fetch API:** Comunicación asíncrona en modo JSON con la REST API de Ollama (`http://localhost:11434`).
-- **Clipboard API:** Copiado rápido de análisis y planes de acción.
-- **LocalStorage API:** Persistencia de preferencias de usuario y tema.
+### Librerías & Integraciones
+- **`html2pdf.js`:** Exportación del informe visual a PDF.
+- **`mammoth.js` / `docx`:** Procesamiento y generación de documentos Word.
 
 ---
 
@@ -160,68 +156,27 @@ AI-CV-Assistant/
 ```bash
 git clone [https://github.com/AlejandraB-Romero/AI-CV-Assistant.git](https://github.com/AlejandraB-Romero/AI-CV-Assistant.git)
 cd AI-CV-Assistant
-2. Instalar y configurar Ollama
-Descarga e instala Ollama desde ollama.com.
-
-Descarga tu modelo de preferencia mediante la terminal (se recomienda Qwen 2.5 Coder o Llama 3.2):
-
+2. Configurar e Iniciar Ollama
 Bash
+# Descargar modelo recomendado
 ollama pull qwen2.5-coder:7b
-# o bien:
-ollama pull llama3.2
-Inicia el servicio local de Ollama:
 
-Bash
+# Iniciar el servicio local
 ollama serve
-3. Ejecutar la aplicación
-Al ser una aplicación basada en ES Modules nativos, se recomienda abrirla a través de un servidor local de desarrollo (como Live Server en VS Code) o usando npx serve:
+3. Ejecutar la Aplicación
+Abre el proyecto mediante un servidor local (ej. Live Server en VS Code o via npx serve):
 
 Bash
 npx serve .
-Abre tu navegador en http://localhost:3000 (o la dirección que indique tu servidor local).
+Abre tu navegador en http://localhost:3000.
 
-📌 Flujo de Funcionamiento
-1. Carga del CV (.docx o texto plano)
-   ↓
-2. Normalización y Extracción del Contenido
-   ↓
-3. Ejecución Paralela / Secuencial de Agentes (ATS, Recruiter, Grammar, Technical, LinkedIn, Career)
-   ↓
-4. Orquestación y Síntesis (Orchestrator Agent -> Plan de Acción 5 Pasos)
-   ↓
-5. Comparativa de Versiones (Comparator Agent -> Score de Mejora)
-   ↓
-6. Visualización de Resultados en UI + Exportación (PDF / DOCX)
-🔒 Privacidad y Seguridad
-El proyecto está diseñado bajo el principio Privacy-First. Al ejecutarse 100% sobre Ollama en entorno local:
-
-Ningún dato personal, experiencia o información contenida en el CV abandona tu ordenador.
-
-No requiere API Keys ni suscripciones a servicios en la nube.
-
-Funciona completamente offline tras descargar los modelos.
-
-🚧 Próximas Mejoras (Roadmap)
-[x] Parser y exportador de archivos .docx.
-
-[x] Agente comparador entre versiones del CV.
-
-[x] Prompts deterministas basados en checklists explícitas.
-
-[ ] Selector dinámico de modelos de Ollama desde la propia interfaz de usuario.
-
-[ ] Visualización en tiempo real del pipeline de ejecución de los agentes.
-
-[ ] Historial de análisis guardado en LocalStorage / IndexedDB.
-
-[ ] Modulo de "Match de Oferta" (CV vs Job Description).
+🔒 Privacidad
+El proyecto opera bajo la premisa Privacy-First. Ningún dato personal o documento cargado sale de tu equipo local. No se requieren claves API ni conexiones a servicios de pago en la nube.
 
 👩‍💻 Autora
 Alejandra Begoña Romero Pérez
 
 Estudiante de Desarrollo de Aplicaciones Web (DAW).
-
-Apasionada por el desarrollo Full Stack, la Inteligencia Artificial, el software de código abierto y la arquitectura de agentes autónomos.
 
 GitHub: AlejandraB-Romero
 
