@@ -178,3 +178,83 @@
   50% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
+
+/* ==========================================================================
+   ESTILOS SPA: SIDEBAR LATERAL Y ENRUTAMIENTO VIRTUAL
+   ========================================================================== */
+
+/* Layout general en Grid: Sidebar a la izquierda, área principal a la derecha */
+.app-spa-container {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 65px);
+  background-color: var(--bg-main);
+}
+
+/* Barra de navegación lateral (Sidebar) */
+.sidebar-nav {
+  background-color: var(--bg-card);
+  border-right: 1px solid var(--border-color);
+  padding: 1.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Botones individuales del Sidebar */
+.sidebar-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.8rem 1rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-align: left;
+  width: 100%;
+}
+
+.sidebar-nav-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+}
+
+/* Estado activo del botón seleccionado */
+.sidebar-nav-btn.active {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* Iconos del menú */
+.sidebar-nav-btn .nav-icon {
+  font-size: 1.15rem;
+}
+
+/* Área donde se renderizan las distintas vistas */
+.main-view-container {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 65px);
+}
+
+/* Ocultar las vistas SPA por defecto excepto la activa */
+.spa-view {
+  display: none;
+}
+
+.spa-view.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

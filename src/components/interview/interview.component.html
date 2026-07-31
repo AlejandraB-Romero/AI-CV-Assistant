@@ -1,0 +1,30 @@
+<section id="view-interview" class="spa-view">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>🎯 Simulador & Preparador de Entrevistas STAR</h2>
+    </div>
+
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+      💡 <strong>Metodología STAR:</strong> Utiliza estas guías de respuesta personalizadas según tu experiencia y sector objetivo para destacar en entrevistas reales.
+    </p>
+
+    <div id="interviewLoading" style="display: none; text-align: center; padding: 3rem 1rem;">
+      <div style="font-size: 1.2rem; color: var(--accent-primary);">⏳ Generando banco de preguntas estratégicas con IA...</div>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Analizando brechas y proyectos para construir escenarios de entrevista.</p>
+    </div>
+
+    <div id="interviewContent" style="display: none;">
+      <div class="agent-card gold-question-card" style="margin-bottom: 1.5rem;">
+        <div class="agent-header">
+          <div class="agent-title gold-question-title">🔥 La Pregunta de Oro (El mayor desafío)</div>
+        </div>
+        <div class="gold-question-body">
+          <strong id="goldQuestionText" class="gold-question-text">---</strong>
+          <p id="goldTipText" class="gold-question-tip" style="margin-top: 0.5rem;">---</p>
+        </div>
+      </div>
+
+      <div id="questionsContainer" style="display: flex; flex-direction: column; gap: 1.25rem;"></div>
+    </div>
+  </div>
+</section>

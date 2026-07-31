@@ -1,12 +1,19 @@
 import { PDFService } from '../services/pdf.service.js';
 import { StorageService } from '../services/storage.service.js';
 import { ExportService } from '../services/export.service.js';
-import { PreviewController } from './preview.controller.js';
-import { InterviewController } from './interview.controller.js';
-import { ComparatorController } from './comparator.controller.js';
-import { CoverLetterController } from './cover-letter.controller.js';
-import { RadarChartService } from './radar.service.js';
 
+// Importación de la navegación SPA y de la nueva suite de Componentes
+import { NavigationController } from './navigation.controller.js';
+import { RadarComponent } from '../components/radar/radar.component.js';
+import { CoverLetterComponent } from '../components/cover-letter/cover-letter.component.js';
+import { InterviewComponent } from '../components/interview/interview.component.js';
+import { ComparatorComponent } from '../components/comparator/comparator.component.js';
+import { HistoryComponent } from '../components/history/history.component.js';
+
+/**
+ * AppController.js
+ * Controlador principal que orquesta la interfaz SPA y comunica los componentes con los Agentes de IA.
+ */
 export class AppController {
   constructor(orchestrator, ollamaService) {
     this.orchestrator = orchestrator;
@@ -14,14 +21,16 @@ export class AppController {
     this.extractedPdfText = '';
     this.activeTab = 'pdfTab';
     this.lastAnalysisData = null;
-    this.currentRewrittenData = null;
 
     this.initDOM();
-    this.initSubControllers();
+    this.initComponents();
     this.bindEvents();
     this.startOllamaHealthCheck();
   }
 
+  /**
+   * Captura de elementos globales del DOM
+   */
   initDOM() {
     this.form = document.getElementById('cvForm');
     this.modelInput = document.getElementById('modelSelect');
@@ -34,79 +43,57 @@ export class AppController {
     this.btnRemoveFile = document.getElementById('btnRemoveFile');
     this.analyzeBtn = document.getElementById('analyzeBtn');
 
-    // REGISTRA EL BOTÓN DE WORD AQUÍ:
-    this.btnGenerateDocx = document.getElementById('btnGenerateDocx');
-    this.btnCoverLetterModal = document.getElementById('btnCoverLetterModal');
-
-    // Botones de Exportación e Historial
-    this.btnHistory = document.getElementById('btnHistory');
-    this.btnPrintPdf = document.getElementById('btnPrintPdf');
-    this.btnExportMd = document.getElementById('btnExportMd');
-    this.btnExportJson = document.getElementById('btnExportJson');
-
-    this.historyModal = document.getElementById('historyModal');
-    this.btnCloseHistory = document.getElementById('btnCloseHistory');
-    this.historyList = document.getElementById('historyList');
-
     this.consoleLogs = document.getElementById('consoleLogs');
     this.ollamaStatusEl = document.getElementById('ollamaStatus');
     this.ollamaStatusText = document.getElementById('ollamaStatusText');
 
     this.kpiGlobal = document.getElementById('kpiGlobalScore');
     this.kpiDuration = document.getElementById('kpiDuration');
-    this.radarWrapper = document.getElementById('radarSvgWrapper');
 
     this.agentsList = ['ats', 'recruiter', 'grammar', 'technical', 'linkedin', 'career', 'summary'];
   }
 
-  initSubControllers() {
-    this.previewCtrl = new PreviewController(this);
-    this.interviewCtrl = new InterviewController(this);
-    this.comparatorCtrl = new ComparatorController(this);
-    this.coverLetterCtrl = new CoverLetterController(this);
+  /**
+   * Inicialización de la arquitectura basada en componentes
+   */
+  initComponents() {
+    // Controller de navegación entre vistas de la SPA
+    this.navCtrl = new NavigationController();
+
+    // Instanciación de componentes modulares
+    this.radarComp = new RadarComponent('radarSvgWrapper');
+    this.coverLetterComp = new CoverLetterComponent(this);
+    this.interviewComp = new InterviewComponent(this);
+    this.comparatorComp = new ComparatorComponent(this);
+    this.historyComp = new HistoryComponent(this);
+
+    // Escuchar el cambio de vistas para auto-renderizar componentes dinámicos (Ej. Radar o Historial)
+    document.querySelectorAll('.sidebar-nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const viewId = btn.dataset.view;
+        if (viewId === 'view-history') {
+          this.historyComp.render();
+        } else if (viewId === 'view-analytics' && this.lastAnalysisData) {
+          this.renderRadarFromData(this.lastAnalysisData);
+        } else if (viewId === 'view-interview' && this.lastAnalysisData) {
+          this.interviewComp.generate();
+        }
+      });
+    });
   }
 
+  /**
+   * Helper para obtener el texto del CV según la pestaña activa (PDF o Texto)
+   */
   getCVText() {
     return this.activeTab === 'pdfTab' ? this.extractedPdfText : this.cvTextArea.value;
   }
 
+  /**
+   * Registro de eventos del formulario y archivo PDF
+   */
   bindEvents() {
-    // Exportaciones
-    if (this.btnExportMd) {
-      this.btnExportMd.addEventListener('click', () => {
-        if (this.lastAnalysisData) ExportService.exportToMarkdown(this.lastAnalysisData);
-      });
-    }
-
-    if (this.btnExportJson) {
-      this.btnExportJson.addEventListener('click', () => {
-        if (this.lastAnalysisData) ExportService.exportToJSON(this.lastAnalysisData);
-      });
-    }
-
-    if (this.btnPrintPdf) {
-      this.btnPrintPdf.addEventListener('click', () => window.print());
-    }
-
-    // Historial
-    if (this.btnHistory) {
-      this.btnHistory.addEventListener('click', () => this.renderHistoryModal());
-    }
-
-    if (this.btnCloseHistory) {
-      this.btnCloseHistory.addEventListener('click', () => this.historyModal.style.display = 'none');
-    }
-
-    // Cierre global de modales al hacer clic fuera (Incluso la Carta de Presentación)
-    window.addEventListener('click', (e) => {
-      if (e.target === this.historyModal) this.historyModal.style.display = 'none';
-      if (e.target === this.comparatorCtrl.compareModal) this.comparatorCtrl.close();
-      if (e.target === this.previewCtrl.previewModal) this.previewCtrl.close();
-      if (e.target === this.interviewCtrl.interviewModal) this.interviewCtrl.close();
-      if (e.target === this.coverLetterCtrl.coverLetterModal) this.coverLetterCtrl.close();
-    });
-
-    // Pestañas (PDF / Texto)
+    // Cambio entre pestañas PDF / Texto Plano
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -117,7 +104,7 @@ export class AppController {
       });
     });
 
-    // Subida PDF
+    // Gestión de subida de archivo PDF
     if (this.fileInput) {
       this.fileInput.addEventListener('change', async (e) => {
         if (e.target.files.length) {
@@ -142,7 +129,7 @@ export class AppController {
       this.btnRemoveFile.addEventListener('click', () => this.clearPdf());
     }
 
-    // Ejecutar Pipeline principal
+    // Submit del formulario para ejecutar la orquestación principal
     if (this.form) {
       this.form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -162,24 +149,16 @@ export class AppController {
             onLog: (type, text) => this.addLog(type, text),
             onAgentStatus: (agent, state, badgeText, data) => this.updateAgentUI(agent, state, badgeText, data),
             onComplete: (summaryData) => {
-
               this.kpiGlobal.textContent = `${summaryData.globalScore}/100`;
               this.kpiDuration.textContent = `${summaryData.totalDuration}s`;
 
               summaryData.fileName = this.fileInput.files[0]?.name || 'CV_Texto_Plano';
               this.lastAnalysisData = summaryData;
 
-              const scores = {
-                ats: summaryData.results.ats?.score || 0,
-                recruiter: summaryData.results.recruiter?.score || 0,
-                grammar: summaryData.results.grammar?.score || 0,
-                technical: summaryData.results.technical?.score || 0,
-                linkedin: summaryData.results.linkedin?.score || 0,
-                career: summaryData.results.career?.score || 0
-              };
-              RadarChartService.render(this.radarWrapper, scores);
+              // Renderizar el gráfico Radar con las notas obtenidas
+              this.renderRadarFromData(summaryData);
+              // Guardar en almacenamiento local
               StorageService.saveAnalysis(summaryData);
-              this.enableExportButtons();
             }
           }, concurrency);
         } catch (err) {
@@ -191,51 +170,10 @@ export class AppController {
     }
   }
 
-  enableExportButtons() {
-    const btnDocx = this.btnGenerateDocx || document.getElementById('btnGenerateDocx');
-    const btnPdf = this.btnPrintPdf || document.getElementById('btnPrintPdf');
-    const btnMd = this.btnExportMd || document.getElementById('btnExportMd');
-    const btnJson = this.btnExportJson || document.getElementById('btnExportJson');
-    const btnCover = document.getElementById('btnCoverLetterModal');
-
-    if (btnCover) btnCover.disabled = false;
-    if (btnDocx) btnDocx.disabled = false;
-    if (btnPdf) btnPdf.disabled = false;
-    if (btnMd) btnMd.disabled = false;
-    if (btnJson) btnJson.disabled = false;
-  }
-
-  renderHistoryModal() {
-    const history = StorageService.getHistory();
-    if (!history.length) {
-      this.historyList.innerHTML = '<p style="text-align:center; color: var(--text-muted);">No hay análisis guardados en el historial.</p>';
-    } else {
-      this.historyList.innerHTML = history.map(item => `
-        <div class="history-item" data-id="${item.id}">
-          <div class="history-item-info">
-            <div class="history-item-title">📄 ${item.fileName}</div>
-            <div class="history-item-meta">Modelo: ${item.model} • ${item.formattedDate}</div>
-          </div>
-          <div class="history-item-score">${item.globalScore}/100</div>
-        </div>
-      `).join('');
-
-      this.historyList.querySelectorAll('.history-item').forEach(el => {
-        el.addEventListener('click', () => {
-          const id = el.dataset.id;
-          const selected = history.find(h => h.id === id);
-          if (selected) this.loadAnalysisFromHistory(selected);
-        });
-      });
-    }
-
-    this.historyModal.style.display = 'flex';
-  }
-
-  loadAnalysisFromHistory(data) {
-    this.lastAnalysisData = data;
-    this.kpiGlobal.textContent = `${data.globalScore}/100`;
-    this.kpiDuration.textContent = `${data.totalDuration}s`;
+  /**
+   * Helper para extraer puntuaciones y mandar a dibujar el SVG al RadarComponent
+   */
+  renderRadarFromData(data) {
     const scores = {
       ats: data.results?.ats?.score || 0,
       recruiter: data.results?.recruiter?.score || 0,
@@ -244,19 +182,30 @@ export class AppController {
       linkedin: data.results?.linkedin?.score || 0,
       career: data.results?.career?.score || 0
     };
-    RadarChartService.render(this.radarWrapper, scores);
+    this.radarComp.render(scores);
+  }
+
+  /**
+   * Carga una evaluación guardada en el historial a la interfaz principal
+   */
+  loadAnalysisFromHistory(data) {
+    this.lastAnalysisData = data;
+    this.kpiGlobal.textContent = `${data.globalScore}/100`;
+    this.kpiDuration.textContent = `${data.totalDuration}s`;
+
+    this.renderRadarFromData(data);
 
     Object.entries(data.results).forEach(([agent, result]) => {
       this.updateAgentUI(agent, 'done', `${result.score}/100`, result);
     });
 
     this.updateAgentUI('summary', 'done', 'Finalizado', { summary: data.finalSummaryText });
-    this.enableExportButtons();
-
-    this.historyModal.style.display = 'none';
     this.addLog('sys', `Análisis cargado desde el historial (${data.formattedDate}).`);
   }
 
+  /**
+   * Comprueba el estado de Ollama periódicamente
+   */
   startOllamaHealthCheck() {
     const verify = async () => {
       const health = await this.ollamaService.checkHealth();
@@ -297,23 +246,11 @@ export class AppController {
   }
 
   resetDashboard() {
-    if (this.radarWrapper) {
-      this.radarWrapper.innerHTML = `<p style="color: var(--text-muted); font-size: 0.95rem;">🚀 Ejecuta la orquestación multi-agente para generar la huella gráfica de habilidades.</p>`;
-    }
     this.kpiGlobal.textContent = '--/100';
     this.kpiDuration.textContent = '0.0s';
-
-    const btnCover = document.getElementById('btnCoverLetterModal');
-    if (btnCover) btnCover.disabled = true;
-    if (this.btnGenerateDocx) this.btnGenerateDocx.disabled = true;
-    if (this.btnPrintPdf) this.btnPrintPdf.disabled = true;
-    if (this.btnExportMd) this.btnExportMd.disabled = true;
-    if (this.btnExportJson) this.btnExportJson.disabled = true;
+    this.radarComp.reset();
 
     this.agentsList.forEach(agent => {
-      const step = document.getElementById(`step-${agent}`);
-      if (step) step.className = 'pipeline-step';
-
       const badge = document.getElementById(`badge-${agent}`);
       if (badge) {
         badge.className = 'agent-status-badge';
@@ -332,9 +269,6 @@ export class AppController {
     if (this.dropzone) this.dropzone.style.display = 'block';
   }
 
-  /**
-   * Helper privado para desestructurar strings u objetos de respuesta de Ollama
-   */
   #formatListItem(item) {
     if (typeof item === 'string') return item;
     if (typeof item === 'object' && item !== null) {
@@ -344,9 +278,6 @@ export class AppController {
   }
 
   updateAgentUI(agent, state, badgeText, data) {
-    const step = document.getElementById(`step-${agent}`);
-    if (step) step.className = `pipeline-step ${state}`;
-
     const badge = document.getElementById(`badge-${agent}`);
     if (badge) {
       badge.className = `agent-status-badge ${state}`;

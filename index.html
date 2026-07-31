@@ -4,11 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CV Auditor AI Enterprise</title>
+  <title>CV Auditor AI Enterprise - Component-Driven SPA</title>
 
-  <!-- PDF.js library -->
+  <!-- Favicon Dinámico -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
+
+  <!-- Librerías Externas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <!-- Librería para generación de documentos Word .docx en el navegador -->
   <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 
   <!-- Hojas de estilo -->
@@ -20,472 +22,56 @@
 <body>
 
   <!-- HEADER GLOBAL -->
-  <header class="app-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-    <!-- 1. IZQUIERDA: MARCA / LOGO -->
-    <div class="brand">
+  <header class="app-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem; background: var(--bg-card); border-bottom: 1px solid var(--border-color);">
+    <div class="brand" style="display: flex; align-items: center; gap: 0.75rem;">
       <div class="brand-icon">CV</div>
-      <h1>CV Auditor <span>Enterprise</span></h1>
+      <h1 style="font-size: 1.2rem; margin: 0;">CV Auditor <span>Enterprise</span></h1>
     </div>
 
-    <!-- 2. CENTRO: ESTADO OLLAMA -->
-    <div class="theme-center-container" style="display: flex; justify-content: center; align-items: center;">
-      <div id="ollamaStatus" class="ollama-status offline">
-        <span class="status-dot"></span>
-        <span id="ollamaStatusText">Ollama Offline</span>
-      </div>
-    </div>
-    <!-- 3. DERECHA: BOTÓN CAMBIO DE TEMA -->
-    <div class="controls" style="display: flex; align-items: center; justify-content: flex-end;">
-      <button id="themeToggleBtn" aria-label="Cambiar Tema">
-        <span id="themeIcon">☀️</span> Tema
-      </button>
+    <!-- Monitor Ollama -->
+    <div id="ollamaStatus" class="ollama-status offline">
+      <span class="status-dot"></span>
+      <span id="ollamaStatusText">Ollama Offline</span>
     </div>
 
-
+    <!-- Tema -->
+    <button id="themeToggleBtn" aria-label="Cambiar Tema" class="btn btn-secondary">
+      <span id="themeIcon">☀️</span> Tema
+    </button>
   </header>
 
-  <!-- CONTENEDOR PRINCIPAL GRID -->
-  <main class="main-container">
+  <!-- LAYOUT PRINCIPAL SPA -->
+  <div class="app-spa-container">
 
-    <!-- PANEL IZQUIERDO: ENTRADA DE DATOS -->
-    <section class="panel">
-      <div class="panel-header">
-        <h2>📄 Entrada de Curriculum</h2>
-        <div class="tab-group">
-          <button class="tab-btn active" data-tab="pdfTab">Archivo PDF</button>
-          <button class="tab-btn" data-tab="textTab">Texto Plano</button>
-        </div>
-      </div>
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar-nav">
+      <button class="sidebar-nav-btn active" data-view="view-dashboard">
+        <span class="nav-icon">🚀</span> Auditoría & Pipeline
+      </button>
+      <button class="sidebar-nav-btn" data-view="view-cover-letter">
+        <span class="nav-icon">✉️</span> Carta Presentación
+      </button>
+      <button class="sidebar-nav-btn" data-view="view-interview">
+        <span class="nav-icon">🎯</span> Entrevista STAR
+      </button>
+      <button class="sidebar-nav-btn" data-view="view-analytics">
+        <span class="nav-icon">📊</span> Radar 360°
+      </button>
+      <button class="sidebar-nav-btn" data-view="view-comparator">
+        <span class="nav-icon">⚔️</span> Comparador
+      </button>
+      <button class="sidebar-nav-btn" data-view="view-history">
+        <span class="nav-icon">📜</span> Historial
+      </button>
+    </aside>
 
-      <form id="cvForm">
-        <div class="form-group">
-          <label for="modelSelect">Modelo de IA Local (Ollama):</label>
-          <select id="modelSelect" required>
-            <option value="">Cargando modelos...</option>
-          </select>
-        </div>
+    <!-- ROUTER OUTLET (Aquí JavaScript renderizará los componentes independientes) -->
+    <main id="app-router-outlet" class="main-view-container">
+      <!-- Carga dinámicamente cada vista -->
+    </main>
 
-        <div class="form-group" style="margin-top: 0.5rem;">
-          <label for="concurrencySelect">Modo de Ejecución (Rendimiento):</label>
-          <select id="concurrencySelect">
-            <option value="2">Balanceado (2 Agentes simultáneos - Recomendado)</option>
-            <option value="1">Modo Ahorro / Máquina Lenta (1 a 1)</option>
-            <option value="6">Modo Turbo (6 Agentes en paralelo - Alta GPU/RAM)</option>
-          </select>
-        </div>
-
-        <!-- TAB PDF -->
-        <div id="pdfTab" class="tab-content active">
-          <div class="form-group">
-            <div class="dropzone" id="pdfDropzone">
-              <span class="dropzone-icon">📁</span>
-              <div class="dropzone-text">Arrastra tu CV en PDF aquí o haz clic</div>
-              <div class="dropzone-subtext">Procesamiento local 100% privado en tu navegador</div>
-              <input type="file" id="pdfFileInput" class="file-input" accept="application/pdf">
-            </div>
-
-            <div class="file-badge" id="fileBadge">
-              <div class="file-info">
-                <span>📄</span>
-                <span id="fileNameDisplay">archivo.pdf</span>
-              </div>
-              <button type="button" class="btn-remove-file" id="btnRemoveFile">✕</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB TEXTO PLANO -->
-        <div id="textTab" class="tab-content">
-          <div class="form-group">
-            <textarea id="cvContent" rows="10" placeholder="Pega el texto del CV..."></textarea>
-          </div>
-        </div>
-
-        <button type="submit" id="analyzeBtn" class="btn-primary" style="margin-top: 1rem;">
-          🚀 Ejecutar Orquestación Multi-Agente
-        </button>
-      </form>
-
-      <!-- CONSOLA DE LOGS DEL ORQUESTADOR -->
-      <div style="margin-top: 1.5rem;">
-        <label style="margin-bottom: 0.5rem; display: block;">📟 Consola de Orquestación en Tiempo Real:</label>
-        <div class="console-panel" id="consoleLogs">
-          <div class="log-entry sys">
-            <span class="log-time">[00:00:00]</span>Sistema inicializado. Esperando entrada de datos...
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PANEL DERECHO: DASHBOARD Y AGENTES -->
-    <section class="panel">
-      <!-- HEADER CON ACCIONES -->
-      <div class="panel-header">
-        <h2>📊 Dashboard de Evaluación Enterprise</h2>
-        <!-- BARRA DE ACCIONES Y HERRAMIENTAS REESTRUCTURADA -->
-        <div class="dashboard-actions-bar"
-          style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; background: var(--bg-card); padding: 1rem 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-
-          <!-- Grupo 1: Generadores y Herramientas del Candidato -->
-          <div class="action-group" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <button id="btnGenerateDocx" class="btn btn-primary" disabled>
-              ✨ Borrador Word (.docx)
-            </button>
-            <button id="btnCoverLetterModal" class="btn btn-secondary" disabled>
-              ✉️ Carta de Presentación
-            </button>
-            <button id="btnInterviewModal" class="btn btn-secondary">
-              🎯 Simulador de Entrevista
-            </button>
-          </div>
-
-          <!-- Grupo 2: Exportaciones e Historial -->
-          <div class="action-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-            <button id="btnPrintPdf" class="btn btn-icon" title="Imprimir o Guardar PDF" disabled>🖨️ PDF</button>
-            <button id="btnExportMd" class="btn btn-icon" title="Exportar reporte en Markdown" disabled>📝 MD</button>
-            <button id="btnExportJson" class="btn btn-icon" title="Exportar reporte en JSON" disabled>💾 JSON</button>
-            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 0.25rem;"></div>
-            <button id="btnHistory" class="btn btn-outline" title="Historial de evaluaciones">📜 Historial</button>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- METRICAS KPI -->
-      <div class="dashboard-metrics" style="margin-top: 1rem;">
-        <div class="metric-card">
-          <div class="metric-value" id="kpiGlobalScore">--/100</div>
-          <div class="metric-label">Nota Global Media</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value" id="kpiDuration">0.0s</div>
-          <div class="metric-label">Tiempo Total</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value" id="kpiActiveAgents">6</div>
-          <div class="metric-label">Agentes Activos</div>
-        </div>
-      </div>
-
-      <!-- PIPELINE VISUAL -->
-      <div class="pipeline-container">
-        <div class="pipeline-step" id="step-ats">
-          <div class="pipeline-node">1</div>ATS
-        </div>
-        <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-recruiter">
-          <div class="pipeline-node">2</div>Recruiter
-        </div>
-        <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-grammar">
-          <div class="pipeline-node">3</div>Grammar
-        </div>
-        <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-technical">
-          <div class="pipeline-node">4</div>Tech
-        </div>
-        <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-linkedin">
-          <div class="pipeline-node">5</div>LinkedIn
-        </div>
-        <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-career">
-          <div class="pipeline-node">6</div>Coach
-        </div>
-        <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-summary">
-          <div class="pipeline-node">7</div>Summary
-        </div>
-      </div>
-
-      <!-- GRID DE LOS 6 AGENTES -->
-      <div class="agent-grid">
-        <article class="agent-card">
-          <div class="agent-header">
-            <div class="agent-title">🤖 ATS Agent</div>
-            <span class="agent-status-badge" id="badge-ats">En espera</span>
-          </div>
-          <div class="agent-output" id="output-ats">Esperando análisis...</div>
-        </article>
-
-        <article class="agent-card">
-          <div class="agent-header">
-            <div class="agent-title">👔 Recruiter Agent</div>
-            <span class="agent-status-badge" id="badge-recruiter">En espera</span>
-          </div>
-          <div class="agent-output" id="output-recruiter">Esperando análisis...</div>
-        </article>
-
-        <article class="agent-card">
-          <div class="agent-header">
-            <div class="agent-title">✍️ Grammar & Style</div>
-            <span class="agent-status-badge" id="badge-grammar">En espera</span>
-          </div>
-          <div class="agent-output" id="output-grammar">Esperando análisis...</div>
-        </article>
-
-        <article class="agent-card">
-          <div class="agent-header">
-            <div class="agent-title">💻 Technical Reviewer</div>
-            <span class="agent-status-badge" id="badge-technical">En espera</span>
-          </div>
-          <div class="agent-output" id="output-technical">Esperando análisis...</div>
-        </article>
-
-        <article class="agent-card">
-          <div class="agent-header">
-            <div class="agent-title">🌐 LinkedIn Advisor</div>
-            <span class="agent-status-badge" id="badge-linkedin">En espera</span>
-          </div>
-          <div class="agent-output" id="output-linkedin">Esperando análisis...</div>
-        </article>
-
-        <article class="agent-card">
-          <div class="agent-header">
-            <div class="agent-title">🎯 Career Coach</div>
-            <span class="agent-status-badge" id="badge-career">En espera</span>
-          </div>
-          <div class="agent-output" id="output-career">Esperando análisis...</div>
-        </article>
-      </div>
-
-      <!-- RESUMEN / PLAN DE ACCION -->
-      <article class="agent-card summary-card" style="margin-top: 1.25rem;">
-        <div class="agent-header">
-          <div class="agent-title">📋 Plan Estratégico Consolidado</div>
-          <span class="agent-status-badge" id="badge-summary">En espera</span>
-        </div>
-        <div class="agent-output" id="output-summary">Esperando resumen del orquestador...</div>
-      </article>
-    </section>
-  </main>
-
-  <!-- SECCIÓN INFERIOR DE ANCHO COMPLETO: RADAR DE COMPETENCIAS -->
-  <section class="panel" style="margin: 0 1.5rem 2rem 1.5rem;">
-    <div class="panel-header">
-      <h2>📊 Huella Digital de Competencias (Radar 360°)</h2>
-      <span class="agent-status-badge" style="background: var(--bg-hover); color: var(--text-muted);">Visual Analytics</span>
-    </div>
-
-    <div id="radarContainer" class="agent-card" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px;">
-      <div id="radarSvgWrapper" style="display: flex; justify-content: center; align-items: center; width: 100%;">
-        <p style="color: var(--text-muted); font-size: 0.95rem;">🚀 Ejecuta la orquestación multi-agente para generar la huella gráfica de habilidades.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- MODAL FLOTANTE DEL HISTORIAL -->
-  <div id="historyModal" class="history-modal" style="display: none;">
-    <div class="history-content">
-      <div class="history-header">
-        <h3>📜 Historial de Análisis Guardados</h3>
-        <button id="btnCloseHistory" class="btn-close">✕</button>
-      </div>
-      <div id="historyList" class="history-list">
-        <!-- Se llena dinámicamente desde JS -->
-      </div>
-    </div>
   </div>
 
-  <!-- MODAL DE COMPARACIÓN DE CVS -->
-  <div id="compareModal" class="history-modal" style="display: none;">
-    <div class="history-content" style="max-width: 900px;">
-      <div class="history-header">
-        <h3>⚔️ Comparador Evolutivo de CV (Antes vs. Después)</h3>
-        <button id="btnCloseCompare" class="btn-close">✕</button>
-      </div>
-
-      <div style="padding: 1.25rem;">
-        <div class="comparator-panel">
-          <div class="form-group">
-            <label for="oldCvText">CV Antiguo / Versión Base:</label>
-            <textarea id="oldCvText" rows="8" placeholder="Pega el texto del CV antiguo aquí..."></textarea>
-          </div>
-          <div class="form-group">
-            <label for="newCvText">CV Nuevo / Versión Optimizada:</label>
-            <textarea id="newCvText" rows="8" placeholder="Pega el texto del CV modificado aquí..."></textarea>
-          </div>
-        </div>
-
-        <button id="btnRunComparison" type="button" class="btn-primary" style="margin-bottom: 1rem;">
-          ⚡ Analizar Impacto y Delta de Mejora
-        </button>
-
-        <!-- RESULTADO DE LA COMPARACIÓN -->
-        <div id="compareResult" class="agent-card" style="display: none;">
-          <div class="agent-header">
-            <div class="agent-title">📈 Informe de Evolución</div>
-            <span class="agent-status-badge done" id="compareScoreBadge">--% Mejora</span>
-          </div>
-          <div class="agent-output" id="compareOutput">Procesando comparación...</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL DE VISTA PREVIA Y EDICIÓN DE CV -->
-  <div id="previewModal" class="history-modal" style="display: none;">
-    <div class="history-content" style="max-width: 950px; width: 95%;">
-      <div class="history-header">
-        <h3>✨ Vista Previa y Edición del CV Optimizado</h3>
-        <button id="btnClosePreview" class="btn-close">✕</button>
-      </div>
-
-      <div style="padding: 1.25rem;">
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-          💡 <strong>Tip:</strong> Puedes hacer clic sobre cualquier campo para editar el texto directamente antes de
-          descargar la versión en Word.
-        </p>
-
-        <!-- ÁREA DE VISTA PREVIA EDITABLE -->
-        <div class="cv-paper-preview">
-          <input type="text" id="prevFullName" class="preview-input-title" placeholder="NOMBRE COMPLETO">
-          <input type="text" id="prevTargetRole" class="preview-input-subtitle" placeholder="TITULAR PROFESIONAL">
-
-          <!-- SOBRE MÍ / PERFIL -->
-          <div class="preview-section-title">SOBRE MÍ</div>
-          <textarea id="prevSummary" class="preview-textarea" rows="3" placeholder="Resumen profesional..."></textarea>
-
-          <!-- PROYECTOS DESTACADOS -->
-          <div id="prevProjectsTitle" class="preview-section-title" style="display: none;">PROYECTOS DESTACADOS</div>
-          <div id="prevProjectsContainer"></div>
-
-          <!-- EXPERIENCIA PROFESIONAL -->
-          <div id="prevExpTitle" class="preview-section-title" style="display: none;">EXPERIENCIA PROFESIONAL</div>
-          <div id="prevExperienceContainer"></div>
-
-          <!-- EDUCACIÓN -->
-          <div id="prevEduTitle" class="preview-section-title" style="display: none;">FORMACIÓN Y EDUCACIÓN</div>
-          <div id="prevEducationContainer"></div>
-
-          <!-- HABILIDADES -->
-          <div class="preview-section-title">COMPETENCIAS Y HABILIDADES</div>
-          <input type="text" id="prevSkills" class="preview-input-text">
-        </div>
-
-        <!-- BOTÓN DE DESCARGA DESDE LA VISTA PREVIA -->
-        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.25rem;">
-          <button id="btnCancelPreview" class="btn-secondary" type="button">Cancelar</button>
-          <button id="btnConfirmDownloadDocx" class="btn-primary" type="button">📥 Descargar en Word (.docx)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL SIMULADOR DE ENTREVISTA -->
-  <div id="interviewModal" class="history-modal" style="display: none;">
-    <div class="history-content" style="max-width: 900px; width: 95%;">
-      <div class="history-header">
-        <h3>🎙️ Simulador & Preparador de Entrevistas</h3>
-        <button id="btnCloseInterview" class="btn-close">✕</button>
-      </div>
-
-      <div style="padding: 1.25rem; max-height: 75vh; overflow-y: auto;">
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-          💡 <strong>Metodología STAR:</strong> Utiliza estas guías de respuesta basadas en tu propio CV para destacar
-          en las entrevistas reales.
-        </p>
-
-        <div id="interviewLoading" style="display: none; text-align: center; padding: 2rem;">
-          <div style="font-size: 1.2rem; color: var(--accent-primary);">⏳ Preparando simulador de entrevista con IA...
-          </div>
-          <p style="color: var(--text-muted); font-size: 0.9rem;">Analizando brechas y proyectos para generar preguntas
-            clave.</p>
-        </div>
-
-        <div id="interviewContent" style="display: none;">
-          <!-- PREGUNTA DE ORO (DESAFÍO) -->
-          <div class="agent-card gold-question-card">
-            <div class="agent-header">
-              <div class="agent-title gold-question-title">🔥 La Pregunta de Oro (El mayor desafío)</div>
-            </div>
-            <div class="gold-question-body">
-              <strong id="goldQuestionText" class="gold-question-text">---</strong>
-              <p id="goldTipText" class="gold-question-tip">---</p>
-            </div>
-          </div>
-
-          <!-- BANCO DE PREGUNTAS Y GUÍA STAR -->
-          <div id="questionsContainer" style="display: flex; flex-direction: column; gap: 1.25rem;">
-            <!-- Se llena dinámicamente desde JS -->
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL CARTA DE PRESENTACIÓN -->
-  <div id="coverLetterModal" class="history-modal" style="display: none;">
-    <div class="history-content" style="max-width: 850px; width: 95%;">
-      <div class="history-header">
-        <h3>✉️ Carta de Presentación Persuasiva</h3>
-        <button id="btnCloseCoverLetter" class="btn-close">✕</button>
-      </div>
-
-      <div style="padding: 1.25rem; max-height: 75vh; overflow-y: auto;">
-
-        <!-- Formulario opcional de Empresa Destino -->
-        <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem; align-items: flex-end;">
-          <div style="flex: 1;">
-            <label for="targetCompanyInput"
-              style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">
-              Empresa / Entidad de destino (Opcional):
-            </label>
-            <input type="text" id="targetCompanyInput" class="preview-input-text"
-              placeholder="Ej. Mercadona, Google, Hospital Central..." style="margin: 0;">
-          </div>
-          <button id="btnRegenerateCoverLetter" type="button" class="btn-primary" style="padding: 0.6rem 1rem;">
-            🔄 Redactar
-          </button>
-        </div>
-
-        <div id="coverLetterLoading" style="display: none; text-align: center; padding: 2rem;">
-          <div style="font-size: 1.2rem; color: var(--accent-primary);">⏳ Redactando carta personalizada con IA...</div>
-          <p style="color: var(--text-muted); font-size: 0.9rem;">Adaptando tono y propuesta de valor al sector.</p>
-        </div>
-
-        <!-- VISTA PREVIA EDITABLE DE LA CARTA -->
-        <div id="coverLetterContent" style="display: none;">
-          <div class="cv-paper-preview"
-            style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md);">
-
-            <div style="margin-bottom: 1rem;">
-              <label style="font-size: 0.8rem; color: var(--accent-primary); font-weight: bold;">ASUNTO:</label>
-              <input type="text" id="coverLetterSubject" class="preview-input-title" style="font-size: 1rem; margin: 0;"
-                placeholder="Asunto del mensaje...">
-            </div>
-
-            <div style="margin-bottom: 1rem;">
-              <input type="text" id="coverLetterGreeting" class="preview-input-text"
-                style="font-weight: bold; margin: 0;" placeholder="Saludo...">
-            </div>
-
-            <div id="coverLetterBodyContainer"
-              style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
-              <!-- Párrafos dinámicos -->
-            </div>
-
-            <div style="margin-bottom: 1rem;">
-              <textarea id="coverLetterCallToAction" class="preview-textarea" rows="2"
-                placeholder="Llamada a la acción..."></textarea>
-            </div>
-
-            <div>
-              <textarea id="coverLetterSignOff" class="preview-textarea" rows="2" style="font-weight: bold;"
-                placeholder="Despedida y firma..."></textarea>
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.25rem;">
-            <button id="btnCopyCoverLetter" class="btn-secondary" type="button">📋 Copiar al Portapapeles</button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- PUNTO DE ENTRADA JAVASCRIPT -->
   <script type="module" src="./src/main.js"></script>
 </body>
 

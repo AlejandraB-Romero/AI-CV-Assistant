@@ -1,0 +1,29 @@
+export const ComparatorTemplate = `
+<section id="view-comparator" class="spa-view active">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>⚔️ Comparador Evolutivo de CV (Antes vs. Después)</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+      <div class="form-group">
+        <label for="oldCvText" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">CV Antiguo / Versión Base:</label>
+        <textarea id="oldCvText" rows="10" placeholder="Pega el texto del CV antiguo aquí..." style="width: 100%;"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="newCvText" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">CV Nuevo / Versión Optimizada:</label>
+        <textarea id="newCvText" rows="10" placeholder="Pega el texto del CV modificado aquí..." style="width: 100%;"></textarea>
+      </div>
+    </div>
+    <button id="btnRunComparison" type="button" class="btn-primary" style="margin-bottom: 1.5rem;">
+      ⚡ Analizar Impacto y Delta de Mejora
+    </button>
+    <div id="compareResult" class="agent-card" style="display: none;">
+      <div class="agent-header">
+        <div class="agent-title">📈 Informe de Evolución</div>
+        <span class="agent-status-badge done" id="compareScoreBadge">--% Mejora</span>
+      </div>
+      <div class="agent-output" id="compareOutput">Procesando comparación...</div>
+    </div>
+  </div>
+</section>
+`;

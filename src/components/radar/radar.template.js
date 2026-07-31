@@ -1,0 +1,12 @@
+export const RadarTemplate = `
+<section id="view-analytics" class="spa-view active">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>📊 Huella Digital de Competencias (Radar 360°)</h2>
+    </div>
+    <div id="radarSvgWrapper" style="display: flex; justify-content: center; align-items: center; min-height: 420px;">
+      <p style="color: var(--text-muted);">Ejecuta el análisis para visualizar la huella de habilidades.</p>
+    </div>
+  </div>
+</section>
+`;
