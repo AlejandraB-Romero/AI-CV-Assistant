@@ -7,6 +7,13 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.controls {
+  display: flex;
+  align-items: center;
+  flex-direction: row; /* Forzamos la disposición horizontal */
+  gap: 1rem;
+}
+
 .brand {
   display: flex;
   align-items: center;

@@ -7,6 +7,7 @@ import { LinkedinAgent } from './linkedin/linkedin.agent.js';
 import { CareerAgent } from './career/career.agent.js';
 import { RewriterAgent } from './rewriter/rewriter.agent.js';
 import { InterviewAgent } from './interview/interview.agent.js';
+import { CoverLetterAgent } from './cover-letter/cover-letter.agent.js';
 
 export class AgentOrchestrator {
   constructor(ollamaService) {
@@ -22,6 +23,7 @@ export class AgentOrchestrator {
     this.careerAgent = new CareerAgent(ollamaService);
     this.rewriterAgent = new RewriterAgent(ollamaService);
     this.interviewAgent = new InterviewAgent(ollamaService);
+    this.coverLetterAgent = new CoverLetterAgent(ollamaService);
   }
 
   /**
@@ -199,5 +201,9 @@ ${formattedResults}`;
 
   async generateInterviewQuestions(cvText, model, sectorContext) {
     return await this.interviewAgent.generateQuestions(cvText, model, sectorContext);
+  }
+
+  async generateCoverLetter(cvText, summaryText, model, sectorContext, targetCompany = '') {
+    return await this.coverLetterAgent.generateLetter(cvText, summaryText, model, sectorContext, targetCompany);
   }
 }

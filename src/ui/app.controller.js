@@ -4,6 +4,8 @@ import { ExportService } from '../services/export.service.js';
 import { PreviewController } from './preview.controller.js';
 import { InterviewController } from './interview.controller.js';
 import { ComparatorController } from './comparator.controller.js';
+import { CoverLetterController } from './cover-letter.controller.js';
+import { RadarChartService } from './radar.service.js';
 
 export class AppController {
   constructor(orchestrator, ollamaService) {
@@ -32,6 +34,10 @@ export class AppController {
     this.btnRemoveFile = document.getElementById('btnRemoveFile');
     this.analyzeBtn = document.getElementById('analyzeBtn');
 
+    // REGISTRA EL BOTÓN DE WORD AQUÍ:
+    this.btnGenerateDocx = document.getElementById('btnGenerateDocx');
+    this.btnCoverLetterModal = document.getElementById('btnCoverLetterModal');
+
     // Botones de Exportación e Historial
     this.btnHistory = document.getElementById('btnHistory');
     this.btnPrintPdf = document.getElementById('btnPrintPdf');
@@ -48,6 +54,7 @@ export class AppController {
 
     this.kpiGlobal = document.getElementById('kpiGlobalScore');
     this.kpiDuration = document.getElementById('kpiDuration');
+    this.radarWrapper = document.getElementById('radarSvgWrapper');
 
     this.agentsList = ['ats', 'recruiter', 'grammar', 'technical', 'linkedin', 'career', 'summary'];
   }
@@ -56,6 +63,7 @@ export class AppController {
     this.previewCtrl = new PreviewController(this);
     this.interviewCtrl = new InterviewController(this);
     this.comparatorCtrl = new ComparatorController(this);
+    this.coverLetterCtrl = new CoverLetterController(this);
   }
 
   getCVText() {
@@ -89,12 +97,13 @@ export class AppController {
       this.btnCloseHistory.addEventListener('click', () => this.historyModal.style.display = 'none');
     }
 
-    // Cierre global de modales al hacer clic fuera
+    // Cierre global de modales al hacer clic fuera (Incluso la Carta de Presentación)
     window.addEventListener('click', (e) => {
       if (e.target === this.historyModal) this.historyModal.style.display = 'none';
       if (e.target === this.comparatorCtrl.compareModal) this.comparatorCtrl.close();
       if (e.target === this.previewCtrl.previewModal) this.previewCtrl.close();
       if (e.target === this.interviewCtrl.interviewModal) this.interviewCtrl.close();
+      if (e.target === this.coverLetterCtrl.coverLetterModal) this.coverLetterCtrl.close();
     });
 
     // Pestañas (PDF / Texto)
@@ -153,12 +162,22 @@ export class AppController {
             onLog: (type, text) => this.addLog(type, text),
             onAgentStatus: (agent, state, badgeText, data) => this.updateAgentUI(agent, state, badgeText, data),
             onComplete: (summaryData) => {
+
               this.kpiGlobal.textContent = `${summaryData.globalScore}/100`;
               this.kpiDuration.textContent = `${summaryData.totalDuration}s`;
 
               summaryData.fileName = this.fileInput.files[0]?.name || 'CV_Texto_Plano';
               this.lastAnalysisData = summaryData;
 
+              const scores = {
+                ats: summaryData.results.ats?.score || 0,
+                recruiter: summaryData.results.recruiter?.score || 0,
+                grammar: summaryData.results.grammar?.score || 0,
+                technical: summaryData.results.technical?.score || 0,
+                linkedin: summaryData.results.linkedin?.score || 0,
+                career: summaryData.results.career?.score || 0
+              };
+              RadarChartService.render(this.radarWrapper, scores);
               StorageService.saveAnalysis(summaryData);
               this.enableExportButtons();
             }
@@ -177,7 +196,9 @@ export class AppController {
     const btnPdf = this.btnPrintPdf || document.getElementById('btnPrintPdf');
     const btnMd = this.btnExportMd || document.getElementById('btnExportMd');
     const btnJson = this.btnExportJson || document.getElementById('btnExportJson');
+    const btnCover = document.getElementById('btnCoverLetterModal');
 
+    if (btnCover) btnCover.disabled = false;
     if (btnDocx) btnDocx.disabled = false;
     if (btnPdf) btnPdf.disabled = false;
     if (btnMd) btnMd.disabled = false;
@@ -215,6 +236,15 @@ export class AppController {
     this.lastAnalysisData = data;
     this.kpiGlobal.textContent = `${data.globalScore}/100`;
     this.kpiDuration.textContent = `${data.totalDuration}s`;
+    const scores = {
+      ats: data.results?.ats?.score || 0,
+      recruiter: data.results?.recruiter?.score || 0,
+      grammar: data.results?.grammar?.score || 0,
+      technical: data.results?.technical?.score || 0,
+      linkedin: data.results?.linkedin?.score || 0,
+      career: data.results?.career?.score || 0
+    };
+    RadarChartService.render(this.radarWrapper, scores);
 
     Object.entries(data.results).forEach(([agent, result]) => {
       this.updateAgentUI(agent, 'done', `${result.score}/100`, result);
@@ -267,9 +297,14 @@ export class AppController {
   }
 
   resetDashboard() {
+    if (this.radarWrapper) {
+      this.radarWrapper.innerHTML = `<p style="color: var(--text-muted); font-size: 0.95rem;">🚀 Ejecuta la orquestación multi-agente para generar la huella gráfica de habilidades.</p>`;
+    }
     this.kpiGlobal.textContent = '--/100';
     this.kpiDuration.textContent = '0.0s';
 
+    const btnCover = document.getElementById('btnCoverLetterModal');
+    if (btnCover) btnCover.disabled = true;
     if (this.btnGenerateDocx) this.btnGenerateDocx.disabled = true;
     if (this.btnPrintPdf) this.btnPrintPdf.disabled = true;
     if (this.btnExportMd) this.btnExportMd.disabled = true;
@@ -327,7 +362,7 @@ export class AppController {
       if (parsedData.summary.trim().startsWith('{')) {
         try {
           parsedData = JSON.parse(parsedData.summary);
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
