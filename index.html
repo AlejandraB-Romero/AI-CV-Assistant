@@ -1,18 +1,25 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CV Auditor AI Enterprise</title>
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+  <!-- PDF.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Librería para generación de documentos Word .docx en el navegador -->
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+
+  <!-- Hojas de estilo -->
   <link rel="stylesheet" href="./assets/css/variables.css">
   <link rel="stylesheet" href="./assets/css/layout.css">
   <link rel="stylesheet" href="./assets/css/components.css">
 </head>
+
 <body>
 
+  <!-- HEADER GLOBAL -->
   <header class="app-header">
     <div class="brand">
       <div class="brand-icon">CV</div>
@@ -30,8 +37,10 @@
     </div>
   </header>
 
+  <!-- CONTENEDOR PRINCIPAL GRID -->
   <main class="main-container">
-    <!-- PANEL IZQUIERDO -->
+
+    <!-- PANEL IZQUIERDO: ENTRADA DE DATOS -->
     <section class="panel">
       <div class="panel-header">
         <h2>📄 Entrada de Curriculum</h2>
@@ -49,6 +58,16 @@
           </select>
         </div>
 
+        <div class="form-group" style="margin-top: 0.5rem;">
+          <label for="concurrencySelect">Modo de Ejecución (Rendimiento):</label>
+          <select id="concurrencySelect">
+            <option value="2">Balanceado (2 Agentes simultáneos - Recomendado)</option>
+            <option value="1">Modo Ahorro / Máquina Lenta (1 a 1)</option>
+            <option value="6">Modo Turbo (6 Agentes en paralelo - Alta GPU/RAM)</option>
+          </select>
+        </div>
+
+        <!-- TAB PDF -->
         <div id="pdfTab" class="tab-content active">
           <div class="form-group">
             <div class="dropzone" id="pdfDropzone">
@@ -68,6 +87,7 @@
           </div>
         </div>
 
+        <!-- TAB TEXTO PLANO -->
         <div id="textTab" class="tab-content">
           <div class="form-group">
             <textarea id="cvContent" rows="10" placeholder="Pega el texto del CV..."></textarea>
@@ -79,23 +99,35 @@
         </button>
       </form>
 
-      <!-- CONSOLA DE LOGS SCRIPT / ORQUESTADOR -->
+      <!-- CONSOLA DE LOGS DEL ORQUESTADOR -->
       <div style="margin-top: 1.5rem;">
         <label style="margin-bottom: 0.5rem; display: block;">📟 Consola de Orquestación en Tiempo Real:</label>
         <div class="console-panel" id="consoleLogs">
-          <div class="log-entry sys"><span class="log-time">[00:00:00]</span>Sistema inicializado. Esperando entrada de datos...</div>
+          <div class="log-entry sys">
+            <span class="log-time">[00:00:00]</span>Sistema inicializado. Esperando entrada de datos...
+          </div>
         </div>
       </div>
     </section>
 
     <!-- PANEL DERECHO: DASHBOARD Y AGENTES -->
     <section class="panel">
+      <!-- HEADER CON ACCIONES -->
       <div class="panel-header">
         <h2>📊 Dashboard de Evaluación Enterprise</h2>
+        <div class="action-buttons">
+          <button id="btnGenerateDocx" type="button" class="btn-secondary" disabled>✨ Generar Word (.docx)</button>
+          <button id="btnInterviewModal" type="button" class="btn-secondary">🎙️ Preparar Entrevista</button>
+          <button id="btnCompareModal" type="button" class="btn-secondary">⚔️ Comparar CVs</button>
+          <button id="btnHistory" type="button" class="btn-secondary">📜 Historial</button>
+          <button id="btnPrintPdf" type="button" class="btn-secondary" disabled>🖨️ PDF / Imprimir</button>
+          <button id="btnExportMd" type="button" class="btn-secondary" disabled>📥 Exportar MD</button>
+          <button id="btnExportJson" type="button" class="btn-secondary" disabled>💾 Exportar JSON</button>
+        </div>
       </div>
 
       <!-- METRICAS KPI -->
-      <div class="dashboard-metrics">
+      <div class="dashboard-metrics" style="margin-top: 1rem;">
         <div class="metric-card">
           <div class="metric-value" id="kpiGlobalScore">--/100</div>
           <div class="metric-label">Nota Global Media</div>
@@ -112,19 +144,33 @@
 
       <!-- PIPELINE VISUAL -->
       <div class="pipeline-container">
-        <div class="pipeline-step" id="step-ats"><div class="pipeline-node">1</div>ATS</div>
+        <div class="pipeline-step" id="step-ats">
+          <div class="pipeline-node">1</div>ATS
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-recruiter"><div class="pipeline-node">2</div>Recruiter</div>
+        <div class="pipeline-step" id="step-recruiter">
+          <div class="pipeline-node">2</div>Recruiter
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-grammar"><div class="pipeline-node">3</div>Grammar</div>
+        <div class="pipeline-step" id="step-grammar">
+          <div class="pipeline-node">3</div>Grammar
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-technical"><div class="pipeline-node">4</div>Tech</div>
+        <div class="pipeline-step" id="step-technical">
+          <div class="pipeline-node">4</div>Tech
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-linkedin"><div class="pipeline-node">5</div>LinkedIn</div>
+        <div class="pipeline-step" id="step-linkedin">
+          <div class="pipeline-node">5</div>LinkedIn
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-career"><div class="pipeline-node">6</div>Coach</div>
+        <div class="pipeline-step" id="step-career">
+          <div class="pipeline-node">6</div>Coach
+        </div>
         <div class="pipeline-connector"></div>
-        <div class="pipeline-step" id="step-summary"><div class="pipeline-node">7</div>Summary</div>
+        <div class="pipeline-step" id="step-summary">
+          <div class="pipeline-node">7</div>Summary
+        </div>
       </div>
 
       <!-- GRID DE LOS 6 AGENTES -->
@@ -179,7 +225,7 @@
       </div>
 
       <!-- RESUMEN / PLAN DE ACCION -->
-      <article class="agent-card summary-card">
+      <article class="agent-card summary-card" style="margin-top: 1.25rem;">
         <div class="agent-header">
           <div class="agent-title">📋 Plan Estratégico Consolidado</div>
           <span class="agent-status-badge" id="badge-summary">En espera</span>
@@ -189,6 +235,148 @@
     </section>
   </main>
 
+  <!-- MODAL FLOTANTE DEL HISTORIAL -->
+  <div id="historyModal" class="history-modal" style="display: none;">
+    <div class="history-content">
+      <div class="history-header">
+        <h3>📜 Historial de Análisis Guardados</h3>
+        <button id="btnCloseHistory" class="btn-close">✕</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <!-- Se llena dinámicamente desde JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE COMPARACIÓN DE CVS -->
+  <div id="compareModal" class="history-modal" style="display: none;">
+    <div class="history-content" style="max-width: 900px;">
+      <div class="history-header">
+        <h3>⚔️ Comparador Evolutivo de CV (Antes vs. Después)</h3>
+        <button id="btnCloseCompare" class="btn-close">✕</button>
+      </div>
+
+      <div style="padding: 1.25rem;">
+        <div class="comparator-panel">
+          <div class="form-group">
+            <label for="oldCvText">CV Antiguo / Versión Base:</label>
+            <textarea id="oldCvText" rows="8" placeholder="Pega el texto del CV antiguo aquí..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="newCvText">CV Nuevo / Versión Optimizada:</label>
+            <textarea id="newCvText" rows="8" placeholder="Pega el texto del CV modificado aquí..."></textarea>
+          </div>
+        </div>
+
+        <button id="btnRunComparison" type="button" class="btn-primary" style="margin-bottom: 1rem;">
+          ⚡ Analizar Impacto y Delta de Mejora
+        </button>
+
+        <!-- RESULTADO DE LA COMPARACIÓN -->
+        <div id="compareResult" class="agent-card" style="display: none;">
+          <div class="agent-header">
+            <div class="agent-title">📈 Informe de Evolución</div>
+            <span class="agent-status-badge done" id="compareScoreBadge">--% Mejora</span>
+          </div>
+          <div class="agent-output" id="compareOutput">Procesando comparación...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE VISTA PREVIA Y EDICIÓN DE CV -->
+  <div id="previewModal" class="history-modal" style="display: none;">
+    <div class="history-content" style="max-width: 950px; width: 95%;">
+      <div class="history-header">
+        <h3>✨ Vista Previa y Edición del CV Optimizado</h3>
+        <button id="btnClosePreview" class="btn-close">✕</button>
+      </div>
+
+      <div style="padding: 1.25rem;">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          💡 <strong>Tip:</strong> Puedes hacer clic sobre cualquier campo para editar el texto directamente antes de
+          descargar la versión en Word.
+        </p>
+
+        <!-- ÁREA DE VISTA PREVIA EDITABLE -->
+        <div class="cv-paper-preview">
+          <input type="text" id="prevFullName" class="preview-input-title" placeholder="NOMBRE COMPLETO">
+          <input type="text" id="prevTargetRole" class="preview-input-subtitle" placeholder="TITULAR PROFESIONAL">
+
+          <!-- SOBRE MÍ / PERFIL -->
+          <div class="preview-section-title">SOBRE MÍ</div>
+          <textarea id="prevSummary" class="preview-textarea" rows="3" placeholder="Resumen profesional..."></textarea>
+
+          <!-- PROYECTOS DESTACADOS -->
+          <div id="prevProjectsTitle" class="preview-section-title" style="display: none;">PROYECTOS DESTACADOS</div>
+          <div id="prevProjectsContainer"></div>
+
+          <!-- EXPERIENCIA PROFESIONAL -->
+          <div id="prevExpTitle" class="preview-section-title" style="display: none;">EXPERIENCIA PROFESIONAL</div>
+          <div id="prevExperienceContainer"></div>
+
+          <!-- EDUCACIÓN -->
+          <div id="prevEduTitle" class="preview-section-title" style="display: none;">FORMACIÓN Y EDUCACIÓN</div>
+          <div id="prevEducationContainer"></div>
+
+          <!-- HABILIDADES -->
+          <div class="preview-section-title">COMPETENCIAS Y HABILIDADES</div>
+          <input type="text" id="prevSkills" class="preview-input-text">
+        </div>
+
+        <!-- BOTÓN DE DESCARGA DESDE LA VISTA PREVIA -->
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.25rem;">
+          <button id="btnCancelPreview" class="btn-secondary" type="button">Cancelar</button>
+          <button id="btnConfirmDownloadDocx" class="btn-primary" type="button">📥 Descargar en Word (.docx)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL SIMULADOR DE ENTREVISTA -->
+  <div id="interviewModal" class="history-modal" style="display: none;">
+    <div class="history-content" style="max-width: 900px; width: 95%;">
+      <div class="history-header">
+        <h3>🎙️ Simulador & Preparador de Entrevistas</h3>
+        <button id="btnCloseInterview" class="btn-close">✕</button>
+      </div>
+
+      <div style="padding: 1.25rem; max-height: 75vh; overflow-y: auto;">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          💡 <strong>Metodología STAR:</strong> Utiliza estas guías de respuesta basadas en tu propio CV para destacar
+          en las entrevistas reales.
+        </p>
+
+        <div id="interviewLoading" style="display: none; text-align: center; padding: 2rem;">
+          <div style="font-size: 1.2rem; color: var(--accent-primary);">⏳ Preparando simulador de entrevista con IA...
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Analizando brechas y proyectos para generar preguntas
+            clave.</p>
+        </div>
+
+        <div id="interviewContent" style="display: none;">
+          <!-- PREGUNTA DE ORO (DESAFÍO) -->
+          <div class="agent-card gold-question-card">
+            <div class="agent-header">
+              <div class="agent-title gold-question-title">🔥 La Pregunta de Oro (El mayor desafío)</div>
+            </div>
+            <div class="gold-question-body">
+              <strong id="goldQuestionText" class="gold-question-text">---</strong>
+              <p id="goldTipText" class="gold-question-tip">---</p>
+            </div>
+          </div>
+
+          <!-- BANCO DE PREGUNTAS Y GUÍA STAR -->
+          <div id="questionsContainer" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <!-- Se llena dinámicamente desde JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PUNTO DE ENTRADA JAVASCRIPT -->
   <script type="module" src="./src/main.js"></script>
 </body>
+
 </html>

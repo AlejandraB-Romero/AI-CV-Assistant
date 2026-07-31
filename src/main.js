@@ -9,5 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const ollama = new OllamaService();
   const orchestrator = new AgentOrchestrator(ollama);
 
+  // Se pasan tanto el orquestador como el servicio de Ollama
   new AppController(orchestrator, ollama);
 });

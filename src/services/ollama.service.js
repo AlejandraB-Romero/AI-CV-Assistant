@@ -6,7 +6,7 @@ export class OllamaService {
   }
 
   /**
-   * Comprueba si Ollama está respondiendo y devuelve la lista de modelos instalados.
+   * Comprueba si Ollama está activo
    */
   async checkHealth() {
     try {
@@ -14,7 +14,10 @@ export class OllamaService {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
-      if (!response.ok) return { online: false, models: [] };
+
+      if (!response.ok) {
+        return { online: false, models: [] };
+      }
 
       const data = await response.json();
       return {
@@ -22,41 +25,25 @@ export class OllamaService {
         models: data.models || []
       };
     } catch (error) {
+      console.warn('Ollama no detectado:', error.message);
       return { online: false, models: [] };
     }
   }
 
-  /**
-   * Envía la petición de generación al modelo especificado.
-   */
+  // En src/services/ollama.service.js
   async query(model, prompt) {
-    try {
-      // Normalizar nombre del modelo si no trae etiqueta :latest
-      const modelName = model.includes(':') ? model : `${model}:latest`;
-
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: modelName,
-          prompt: prompt,
-          stream: false
-        })
-      });
-
-      if (response.status === 404) {
-        throw new Error(`El modelo "${modelName}" no está descargado en tu Ollama. Ejecuta en tu terminal: ollama pull ${model}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP ${response.status}: Verifica el estado del servicio Ollama.`);
-      }
-
-      const data = await response.json();
-      return data.response;
-    } catch (error) {
-      console.error('OllamaService Error:', error);
-      throw error;
-    }
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        prompt: prompt,
+        stream: false,
+        format: 'json' // <--- ESTO OBLIGA A OLLAMA A RESPETAR EL SCHEMA
+      })
+    });
+    const data = await response.json();
+    return data.response;
   }
+
 }
