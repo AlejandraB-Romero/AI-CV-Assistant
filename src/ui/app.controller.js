@@ -1,6 +1,8 @@
 import { PDFService } from '../services/pdf.service.js';
 import { StorageService } from '../services/storage.service.js';
 import { ExportService } from '../services/export.service.js';
+import { DocxService } from '../services/docx.service.js';
+import { AGENT_PROMPTS } from '../agents/agent.prompts.js';
 
 export class AppController {
   constructor(orchestrator, ollamaService) {
@@ -26,6 +28,8 @@ export class AppController {
     this.fileNameDisplay = document.getElementById('fileNameDisplay');
     this.btnRemoveFile = document.getElementById('btnRemoveFile');
     this.analyzeBtn = document.getElementById('analyzeBtn');
+
+    this.btnGenerateDocx = document.getElementById('btnGenerateDocx');
 
     // Botones de Exportación e Historial
     this.btnHistory = document.getElementById('btnHistory');
@@ -119,6 +123,38 @@ export class AppController {
         } finally {
           this.btnRunComparison.disabled = false;
           this.btnRunComparison.textContent = '⚡ Analizar Impacto y Delta de Mejora';
+        }
+      });
+    }
+
+    // Generar Documento Word (.docx) - ¡Independiente y Desanidado!
+    if (this.btnGenerateDocx) {
+      this.btnGenerateDocx.addEventListener('click', async () => {
+        if (!this.lastAnalysisData) return;
+
+        const cvText = this.activeTab === 'pdfTab' ? this.extractedPdfText : this.cvTextArea.value;
+        const model = this.modelInput.value;
+
+        this.btnGenerateDocx.disabled = true;
+        this.btnGenerateDocx.textContent = '⏳ Generando documento .docx...';
+
+        try {
+          this.addLog('orchestrator', 'Redactando versión optimizada en formato Word...');
+
+          // 1. Pedir a Ollama la reescritura estructurada
+          const prompt = AGENT_PROMPTS.REWRITER(cvText, this.lastAnalysisData.finalSummaryText);
+          const rawResponse = await this.ollamaService.query(model, prompt);
+          const rewrittenData = this.orchestrator.parseAgentResponse(rawResponse);
+
+          // 2. Generar y descargar el archivo .docx
+          await DocxService.generateAndDownload(rewrittenData, `CV_Optimizado_${Date.now()}.docx`);
+          this.addLog('sys', '¡Archivo Word (.docx) generado y descargado con éxito!');
+        } catch (err) {
+          alert(`Error al generar Word: ${err.message}`);
+          this.addLog('error', `Error al generar .docx: ${err.message}`);
+        } finally {
+          this.btnGenerateDocx.disabled = false;
+          this.btnGenerateDocx.textContent = '✨ Generar Word (.docx)';
         }
       });
     }
@@ -233,6 +269,7 @@ export class AppController {
   }
 
   enableExportButtons() {
+    if (this.btnGenerateDocx) this.btnGenerateDocx.disabled = false;
     if (this.btnPrintPdf) this.btnPrintPdf.disabled = false;
     if (this.btnExportMd) this.btnExportMd.disabled = false;
     if (this.btnExportJson) this.btnExportJson.disabled = false;
@@ -325,6 +362,7 @@ export class AppController {
     this.kpiGlobal.textContent = '--/100';
     this.kpiDuration.textContent = '0.0s';
 
+    if (this.btnGenerateDocx) this.btnGenerateDocx.disabled = true;
     if (this.btnPrintPdf) this.btnPrintPdf.disabled = true;
     if (this.btnExportMd) this.btnExportMd.disabled = true;
     if (this.btnExportJson) this.btnExportJson.disabled = true;

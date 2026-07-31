@@ -142,7 +142,7 @@ export const AGENT_PROMPTS = {
     4. PROYECCIÓN FUTURA: Comprueba si el historial construye de forma lógica el camino hacia el siguiente nivel profesional.
 
     RESTRICCIONES:
-    - Responde EXCLUSIVAMENTE con un objeto JSON válido con la siguiente estructura exacta:
+    - Responde EXCLUSIVAMENTE con un objeto JSON válido with la siguiente estructura exacta:
 
     {
       "score": <número de 0 a 100 evaluando la solidez y progresión de la trayectoria>,
@@ -196,5 +196,52 @@ export const AGENT_PROMPTS = {
 
     --- CV NUEVO ---
     ${newCvText}
+  `,
+
+ REWRITER: (originalCv, summaryRecommendations) => `
+    [DIRECTRIZ DE ADAPTABILIDAD UNIVERSAL Y REALISMO PROFESIONAL]
+    Actúa como un Redactor Senior de Currículums Multidisciplinar.
+    Tu objetivo es reescribir y optimizar el CV adaptándote FIDELMENTE al sector y perfil profesional que se deduce del CV original (salud, administración, comercio, hostelería, tecnología, servicios, etc.).
+
+    REGLAS DE ORO:
+    1. ADAPTACIÓN AL PERFIL REAL: No fuerces vocabulario técnico ni cambies el foco si el CV no es de un perfil tecnológico. Respeta la especialidad original.
+    2. NO INVENTES MÉTRICAS O DATOS FALSOS: Si un puesto era operativo, destaca responsabilidades reales, rigor, trabajo en equipo, atención al cliente o gestión de tiempos sin alucinar porcentajes irresponsables.
+    3. EXTRACTO PROFESIONAL A MEDIDA: Redacta un perfil de 3 a 4 líneas enfocado en los puntos fuertes reales del candidato, su trayectoria y su propuesta de valor para su sector.
+    4. INCLUSIÓN COMPLETA DE SECCIONES: Incluye experiencia, formación académica y habilidades reales mencionadas en el texto original.
+
+    [ESTRUCTURA DE SALIDA STRICT JSON]
+    {
+      "fullName": "<Nombre del candidato>",
+      "targetRole": "<Título profesional principal adaptado a su sector real>",
+      "summaryProfile": "<Extracto profesional de 3-4 líneas adaptado a su especialidad>",
+      "experience": [
+        {
+          "role": "<Puesto>",
+          "company": "<Empresa/Organización>",
+          "period": "<Fechas>",
+          "achievements": [
+            "<Responsabilidad o logro clave redactado con verbo de acción y enfoque profesional 1>",
+            "<Habilidad práctica o gestión relevante aplicada en el puesto 2>"
+          ]
+        }
+      ],
+      "education": [
+        {
+          "degree": "<Titulación / Certificación>",
+          "institution": "<Centro educativo / Escuela>",
+          "period": "<Fechas o año de finalización>",
+          "details": [
+            "<Competencia clave o aspecto relevante desarrollado durante la formación 1>"
+          ]
+        }
+      ],
+      "skills": ["<Habilidad/Herramienta 1>", "<Habilidad 2>", "<Competencia profesional 3>"]
+    }
+
+    --- TEXTO DEL CV ORIGINAL ---
+    ${originalCv}
+
+    --- PLAN Y RECOMENDACIONES A APLICAR ---
+    ${summaryRecommendations}
   `
 };

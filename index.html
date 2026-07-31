@@ -8,6 +8,8 @@
 
   <!-- PDF.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Librería para generación de documentos Word .docx en el navegador -->
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 
   <!-- Hojas de estilo -->
   <link rel="stylesheet" href="./assets/css/variables.css">
@@ -111,20 +113,20 @@
     <!-- PANEL DERECHO: DASHBOARD Y AGENTES -->
     <section class="panel">
       <!-- HEADER CON ACCIONES -->
-      <!-- En el panel-header de la sección derecha de index.html -->
       <div class="panel-header">
         <h2>📊 Dashboard de Evaluación Enterprise</h2>
         <div class="action-buttons">
+          <button id="btnGenerateDocx" type="button" class="btn-secondary" disabled>✨ Generar Word (.docx)</button>
           <button id="btnCompareModal" type="button" class="btn-secondary">⚔️ Comparar CVs</button>
           <button id="btnHistory" type="button" class="btn-secondary">📜 Historial</button>
           <button id="btnPrintPdf" type="button" class="btn-secondary" disabled>🖨️ PDF / Imprimir</button>
           <button id="btnExportMd" type="button" class="btn-secondary" disabled>📥 Exportar MD</button>
           <button id="btnExportJson" type="button" class="btn-secondary" disabled>💾 Exportar JSON</button>
         </div>
-      </div>
+      </div> <!-- Se cierra correctamente la cabecera del panel -->
 
       <!-- METRICAS KPI -->
-      <div class="dashboard-metrics">
+      <div class="dashboard-metrics" style="margin-top: 1rem;">
         <div class="metric-card">
           <div class="metric-value" id="kpiGlobalScore">--/100</div>
           <div class="metric-label">Nota Global Media</div>
@@ -222,7 +224,7 @@
       </div>
 
       <!-- RESUMEN / PLAN DE ACCION -->
-      <article class="agent-card summary-card">
+      <article class="agent-card summary-card" style="margin-top: 1.25rem;">
         <div class="agent-header">
           <div class="agent-title">📋 Plan Estratégico Consolidado</div>
           <span class="agent-status-badge" id="badge-summary">En espera</span>
