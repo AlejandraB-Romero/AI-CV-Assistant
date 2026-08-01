@@ -1,0 +1,111 @@
+/* Importación de tipografías: Space Grotesk para lectura técnica y JetBrains Mono para código/detalles */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* TEMA CLARO: Retro Pastel / Beige Cálido (Sin fogonazo de luz) */
+:root[data-theme="light"] {
+  --bg-primary: #f4f1ea;        /* Fondo del main: beige cálido suave */
+  --bg-header-nav: #e9e4d9;     /* Header y Nav unificados en un tono superior para enmarcar */
+  --bg-surface: #ffffff;        /* Tarjetas / contenedores */
+  --bg-surface-hover: #f1ebd9;  /* Hover en tarjetas */
+  
+  --border-color: #9b5de5;      /* Morado lavanda pastel */
+  
+  --text-main: #2b2d42;         /* Azul/gris oscuro muy legible */
+  --text-muted: #6c757d;       /* Gris medio */
+  
+  --accent-primary: #ff70a6;    /* Rosa pastel llamativo */
+  --accent-hover: #ff477e;      /* Rosa pastel más intenso */
+  --accent-subtle: #fbebf2;     /* Fondo suave para seleccionados */
+  --accent-border: #ff70a6;    
+  
+  /* Acentos de neón pastel */
+  --neon-green: #38b000;
+  --neon-pink: #ff70a6;
+  --neon-purple: #9b5de5;
+  --neon-blue: #48cae4;
+
+  --status-success: #38b000;
+  --status-danger: #e63946;
+  --status-bg: #f4f1ea;
+
+  --dropzone-bg: #ffffff;
+  --dropzone-hover: #fbebf2;
+  --dropzone-border: #48cae4;
+  
+  --shadow-sm: 0 2px 4px rgba(43, 45, 66, 0.05);
+  --shadow-md: 0 4px 12px rgba(43, 45, 66, 0.08);
+  
+  /* Radios de borde rectangulares */
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;  /* Para badges y píldoras redondeadas */
+}
+
+/* TEMA OSCURO: Cyberpunk Neón (Gris/negro profundo con bordes y luces fluorescentes) */
+:root[data-theme="dark"] {
+  --bg-primary: #0f111a;        /* Fondo del main: gris noche muy oscuro */
+  --bg-header-nav: #161925;     /* Header y Nav unificados */
+  --bg-surface: #1a1d2e;        /* Tarjetas / contenedores */
+  --bg-surface-hover: #22263d;  /* Hover en tarjetas */
+  
+  --border-color: #9d4edd;      /* Morado eléctrico */
+  
+  --text-main: #e0e6ed;         /* Blanco azulado muy claro */
+  --text-muted: #94a3b8;       /* Gris claro atenuado */
+  
+  --accent-primary: #ff007f;    /* Rosa/Magenta Neón */
+  --accent-hover: #ff3399;      
+  --accent-subtle: #2d122d;     /* Fondo sutil rosa oscuro */
+  --accent-border: #ff007f;
+  
+  /* Acentos fluorescentes */
+  --neon-green: #00ff87;
+  --neon-pink: #ff007f;
+  --neon-purple: #9d4edd;
+  --neon-blue: #00f0ff;
+
+  --status-success: #00ff87;
+  --status-danger: #ff0055;
+  --status-bg: #0f111a;
+
+  --dropzone-bg: #1a1d2e;
+  --dropzone-hover: #22263d;
+  --dropzone-border: #00f0ff;
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 0 10px rgba(157, 78, 221, 0.25); /* Resplandor sutil neón */
+  
+  /* Radios de borde rectangulares */
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;  /* Para badges y píldoras redondeadas */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body {
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Regla para unificar Header y Nav con su propio color diferencial */
+header, nav {
+  background-color: var(--bg-header-nav);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* El contenido principal contrasta directamente usando el bg-primary */
+main {
+  background-color: var(--bg-primary);
+  flex: 1;
+}

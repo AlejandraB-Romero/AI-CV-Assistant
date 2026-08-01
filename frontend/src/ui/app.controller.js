@@ -1,8 +1,9 @@
 import { PDFService } from '../services/pdf.service.js';
 import { StorageService } from '../services/storage.service.js';
 import { ExportService } from '../services/export.service.js';
+import { TemplateLoader } from './template-loader.js';
 
-// Importación de la navegación SPA y de la nueva suite de Componentes
+// Importación de componentes modulares
 import { NavigationController } from './navigation.controller.js';
 import { RadarComponent } from '../components/radar/radar.component.js';
 import { CoverLetterComponent } from '../components/cover-letter/cover-letter.component.js';
@@ -12,7 +13,7 @@ import { HistoryComponent } from '../components/history/history.component.js';
 
 /**
  * AppController.js
- * Controlador principal que orquesta la interfaz SPA y comunica los componentes con los Agentes de IA.
+ * Controlador orquestador central que comunica los componentes con los agentes de IA y Ollama.
  */
 export class AppController {
   constructor(orchestrator, ollamaService) {
@@ -22,14 +23,13 @@ export class AppController {
     this.activeTab = 'pdfTab';
     this.lastAnalysisData = null;
 
-    this.initDOM();
+    // Inicializar componentes dinámicos de la SPA
     this.initComponents();
-    this.bindEvents();
     this.startOllamaHealthCheck();
   }
 
   /**
-   * Captura de elementos globales del DOM
+   * Captura los elementos del DOM de la vista Dashboard activa
    */
   initDOM() {
     this.form = document.getElementById('cvForm');
@@ -54,43 +54,34 @@ export class AppController {
   }
 
   /**
-   * Inicialización de la arquitectura basada en componentes
+   * Instanciación de componentes modulares y del enrutador SPA
    */
   initComponents() {
-    // Controller de navegación entre vistas de la SPA
-    this.navCtrl = new NavigationController();
-
-    // Instanciación de componentes modulares
+    // 1. Instanciar componentes independientes
     this.radarComp = new RadarComponent('radarSvgWrapper');
     this.coverLetterComp = new CoverLetterComponent(this);
     this.interviewComp = new InterviewComponent(this);
     this.comparatorComp = new ComparatorComponent(this);
     this.historyComp = new HistoryComponent(this);
 
-    // Escuchar el cambio de vistas para auto-renderizar componentes dinámicos (Ej. Radar o Historial)
-    document.querySelectorAll('.sidebar-nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const viewId = btn.dataset.view;
-        if (viewId === 'view-history') {
-          this.historyComp.render();
-        } else if (viewId === 'view-analytics' && this.lastAnalysisData) {
-          this.renderRadarFromData(this.lastAnalysisData);
-        } else if (viewId === 'view-interview' && this.lastAnalysisData) {
-          this.interviewComp.generate();
-        }
-      });
-    });
+    // 2. Inicializar conmutador de tema si está disponible
+    if (TemplateLoader && typeof TemplateLoader.initThemeToggle === 'function') {
+      TemplateLoader.initThemeToggle();
+    }
+
+    // 3. Inicializar enrutador de navegación (Este cargará el HTML del Dashboard y llamará a initDOM() y bindEvents())
+    this.navCtrl = new NavigationController(this);
   }
 
   /**
-   * Helper para obtener el texto del CV según la pestaña activa (PDF o Texto)
+   * Retorna el texto del CV según la pestaña activa (PDF / Texto)
    */
   getCVText() {
-    return this.activeTab === 'pdfTab' ? this.extractedPdfText : this.cvTextArea.value;
+    return this.activeTab === 'pdfTab' ? this.extractedPdfText : (this.cvTextArea?.value || '');
   }
 
   /**
-   * Registro de eventos del formulario y archivo PDF
+   * Vincula los listeners de eventos para el formulario principal y subida de PDF
    */
   bindEvents() {
     // Cambio entre pestañas PDF / Texto Plano
@@ -104,18 +95,18 @@ export class AppController {
       });
     });
 
-    // Gestión de subida de archivo PDF
+    // Gestión de subida de PDF
     if (this.fileInput) {
       this.fileInput.addEventListener('change', async (e) => {
         if (e.target.files.length) {
           const file = e.target.files[0];
-          this.fileNameDisplay.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-          this.dropzone.style.display = 'none';
-          this.fileBadge.classList.add('visible');
+          if (this.fileNameDisplay) this.fileNameDisplay.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+          if (this.dropzone) this.dropzone.style.display = 'none';
+          if (this.fileBadge) this.fileBadge.classList.add('visible');
 
           try {
             this.extractedPdfText = await PDFService.extractText(file);
-            this.cvTextArea.value = this.extractedPdfText;
+            if (this.cvTextArea) this.cvTextArea.value = this.extractedPdfText;
             this.addLog('sys', `PDF "${file.name}" procesado correctamente.`);
           } catch (err) {
             alert(`Error en PDF: ${err.message}`);
@@ -129,14 +120,14 @@ export class AppController {
       this.btnRemoveFile.addEventListener('click', () => this.clearPdf());
     }
 
-    // Submit del formulario para ejecutar la orquestación principal
+    // Envío del formulario principal de auditoría
     if (this.form) {
       this.form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const cvText = this.getCVText();
 
         if (!cvText.trim()) return alert('Proporciona un documento PDF o texto plano.');
-        const model = this.modelInput.value;
+        const model = this.modelInput?.value;
         if (!model) return alert('Selecciona un modelo de Ollama.');
 
         const concurrency = parseInt(this.concurrencyInput?.value, 10) || 2;
@@ -149,15 +140,13 @@ export class AppController {
             onLog: (type, text) => this.addLog(type, text),
             onAgentStatus: (agent, state, badgeText, data) => this.updateAgentUI(agent, state, badgeText, data),
             onComplete: (summaryData) => {
-              this.kpiGlobal.textContent = `${summaryData.globalScore}/100`;
-              this.kpiDuration.textContent = `${summaryData.totalDuration}s`;
+              if (this.kpiGlobal) this.kpiGlobal.textContent = `${summaryData.globalScore}/100`;
+              if (this.kpiDuration) this.kpiDuration.textContent = `${summaryData.totalDuration}s`;
 
-              summaryData.fileName = this.fileInput.files[0]?.name || 'CV_Texto_Plano';
+              summaryData.fileName = this.fileInput?.files[0]?.name || 'CV_Texto_Plano';
               this.lastAnalysisData = summaryData;
 
-              // Renderizar el gráfico Radar con las notas obtenidas
               this.renderRadarFromData(summaryData);
-              // Guardar en almacenamiento local
               StorageService.saveAnalysis(summaryData);
             }
           }, concurrency);
@@ -171,9 +160,10 @@ export class AppController {
   }
 
   /**
-   * Helper para extraer puntuaciones y mandar a dibujar el SVG al RadarComponent
+   * Renderiza el gráfico SVG del Radar de competencias
    */
   renderRadarFromData(data) {
+    if (!this.radarComp) return;
     const scores = {
       ats: data.results?.ats?.score || 0,
       recruiter: data.results?.recruiter?.score || 0,
@@ -186,29 +176,33 @@ export class AppController {
   }
 
   /**
-   * Carga una evaluación guardada en el historial a la interfaz principal
+   * Carga una evaluación guardada en el historial
    */
   loadAnalysisFromHistory(data) {
     this.lastAnalysisData = data;
-    this.kpiGlobal.textContent = `${data.globalScore}/100`;
-    this.kpiDuration.textContent = `${data.totalDuration}s`;
+    if (this.kpiGlobal) this.kpiGlobal.textContent = `${data.globalScore}/100`;
+    if (this.kpiDuration) this.kpiDuration.textContent = `${data.totalDuration}s`;
 
     this.renderRadarFromData(data);
 
-    Object.entries(data.results).forEach(([agent, result]) => {
-      this.updateAgentUI(agent, 'done', `${result.score}/100`, result);
-    });
+    if (data.results) {
+      Object.entries(data.results).forEach(([agent, result]) => {
+        this.updateAgentUI(agent, 'done', `${result.score}/100`, result);
+      });
+    }
 
     this.updateAgentUI('summary', 'done', 'Finalizado', { summary: data.finalSummaryText });
     this.addLog('sys', `Análisis cargado desde el historial (${data.formattedDate}).`);
   }
 
   /**
-   * Comprueba el estado de Ollama periódicamente
+   * Comprueba el estado del servidor Ollama
    */
   startOllamaHealthCheck() {
     const verify = async () => {
       const health = await this.ollamaService.checkHealth();
+      if (!this.ollamaStatusEl || !this.ollamaStatusText || !this.modelInput) return;
+
       if (health.online) {
         this.ollamaStatusEl.className = 'ollama-status online';
         this.ollamaStatusText.textContent = 'Ollama Online';
@@ -224,19 +218,33 @@ export class AppController {
   }
 
   populateModelDropdown(models) {
-    if (!models || models.length === 0) return;
+    if (!this.modelInput) return;
 
     const currentSelection = this.modelInput.value;
-    this.modelInput.innerHTML = models.map(m => `
-      <option value="${m.name}">${m.name} (${(m.size / (1024 * 1024 * 1024)).toFixed(1)} GB)</option>
+
+    let optionsHtml = models.map(m => `
+      <option value="${m.name}">${m.name} (${(m.size / (1024 * 1024 * 1024)).toFixed(1)} GB - Local)</option>
     `).join('');
 
-    if (currentSelection && models.some(m => m.name === currentSelection)) {
+    // Añadir Bonsai al principio de la lista
+    optionsHtml = `
+      <optgroup label="⚡ Cloud API (Alta Potencia)">
+        <option value="prism-ml/bonsai-27b">🌲 Bonsai 27B (Prism ML API)</option>
+      </optgroup>
+      <optgroup label="💻 Modelos Locales (Ollama)">
+        ${optionsHtml}
+      </optgroup>
+    `;
+
+    this.modelInput.innerHTML = optionsHtml;
+
+    if (currentSelection) {
       this.modelInput.value = currentSelection;
     }
   }
 
   addLog(type, text) {
+    if (!this.consoleLogs) return;
     const time = new Date().toLocaleTimeString();
     const entry = document.createElement('div');
     entry.className = `log-entry ${type}`;
@@ -246,9 +254,9 @@ export class AppController {
   }
 
   resetDashboard() {
-    this.kpiGlobal.textContent = '--/100';
-    this.kpiDuration.textContent = '0.0s';
-    this.radarComp.reset();
+    if (this.kpiGlobal) this.kpiGlobal.textContent = '--/100';
+    if (this.kpiDuration) this.kpiDuration.textContent = '0.0s';
+    if (this.radarComp) this.radarComp.reset();
 
     this.agentsList.forEach(agent => {
       const badge = document.getElementById(`badge-${agent}`);
@@ -265,6 +273,7 @@ export class AppController {
   clearPdf() {
     this.extractedPdfText = '';
     if (this.fileInput) this.fileInput.value = '';
+    if (this.fileNameDisplay) this.fileNameDisplay.textContent = '';
     if (this.fileBadge) this.fileBadge.classList.remove('visible');
     if (this.dropzone) this.dropzone.style.display = 'block';
   }
