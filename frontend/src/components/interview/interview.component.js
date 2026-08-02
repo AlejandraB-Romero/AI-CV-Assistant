@@ -1,107 +1,91 @@
 /**
- * interview.component.js
- * Componente modular encargado de gestionar el simulador de entrevistas STAR.
- * Muestra la Pregunta de Oro (desafío principal) y el banco de preguntas por competencias.
+ * InterviewComponent.js
+ * Gestiona la vista y generación de preguntas STAR conectándose al Backend C#
  */
 export class InterviewComponent {
-  /**
-   * @param {Object} appRef - Referencia al controlador principal de la aplicación
-   */
-  constructor(appRef) {
-    this.app = appRef;
-    this.initDOM();
+  constructor(appCtrl) {
+    this.appCtrl = appCtrl;
+    this.container = null;
+    this.btnGenerate = null;
   }
 
-  /**
-   * Enlaces con el DOM de la vista "view-interview"
-   */
   initDOM() {
-    this.loadingWrapper = document.getElementById('interviewLoading');
-    this.contentWrapper = document.getElementById('interviewContent');
-    this.goldQuestionText = document.getElementById('goldQuestionText');
-    this.goldTipText = document.getElementById('goldTipText');
-    this.questionsContainer = document.getElementById('questionsContainer');
+    this.container = document.getElementById('interviewContainer');
+    this.btnGenerate = document.getElementById('btnGenerateInterview');
+
+    if (this.btnGenerate) {
+      // Evitar listeners duplicados borrando y reasignando
+      this.btnGenerate.onclick = () => this.generateInterview();
+    }
   }
 
-  /**
-   * Genera el banco de preguntas mediante el orquestador
-   */
-  async generate() {
-    if (!this.app.lastAnalysisData) {
-      alert('Por favor, ejecuta primero la orquestación en la pestaña "Auditoría & Pipeline".');
-      return;
+  async generateInterview() {
+    const cvText = this.appCtrl.getCVText();
+    if (!cvText || !cvText.trim()) {
+      return alert('Por favor, proporciona primero un CV (PDF o Texto plano).');
     }
 
-    // Mostrar estado de carga
-    this.loadingWrapper.style.display = 'block';
-    this.contentWrapper.style.display = 'none';
+    const model = this.appCtrl.modelInput?.value || 'llama3:latest';
 
-    const cvText = this.app.getCVText();
-    const model = this.app.modelInput.value;
-    const sectorContext = this.app.lastAnalysisData.sectorContext || {
-      sectorLabel: 'General',
-      targetRole: 'Profesional'
-    };
+    if (this.btnGenerate) {
+      this.btnGenerate.disabled = true;
+      this.btnGenerate.textContent = '⏳ Generando Preguntas STAR...';
+    }
 
     try {
-      const interviewData = await this.app.orchestrator.generateInterviewQuestions(
-        cvText,
-        this.app.lastAnalysisData.finalSummaryText,
-        model,
-        sectorContext
-      );
+      this.appCtrl.addLog('sys', 'Solicitando preguntas de entrevista STAR a C#...');
+      
+      const response = await this.appCtrl.backendService.generateStarInterview(cvText, model);
+      
+      let rawResult = response.rawResult || response;
+      let rawStr = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
 
-      this.render(interviewData);
-      this.loadingWrapper.style.display = 'none';
-      this.contentWrapper.style.display = 'block';
+      const match = rawStr.match(/\{[\s\S]*\}/);
+      let cleanJson = match ? match[0] : rawStr;
+      
+      cleanJson = cleanJson.replace(/[\r\n]+/g, " ");
+      const data = JSON.parse(cleanJson);
+
+      this.renderQuestions(data.questions || []);
+      this.appCtrl.addLog('sys', '✅ Preguntas de Entrevista STAR cargadas con éxito.');
     } catch (err) {
-      alert(`Error al generar entrevista: ${err.message}`);
-      this.loadingWrapper.style.display = 'none';
+      this.appCtrl.addLog('error', `Error generando entrevista: ${err.message}`);
+      alert(`Fallo en la entrevista: ${err.message}`);
+    } finally {
+      if (this.btnGenerate) {
+        this.btnGenerate.disabled = false;
+        this.btnGenerate.textContent = '🎯 Generar Preguntas STAR';
+      }
     }
   }
 
-  /**
-   * Pinta la Pregunta de Oro y la lista de preguntas con método STAR
-   */
-  render(data) {
-    if (!data) return;
+  renderQuestions(questions) {
+    if (!this.container) return;
 
-    // 1. Pregunta de Oro (Desafío)
-    if (data.goldQuestion) {
-      this.goldQuestionText.textContent = data.goldQuestion.question || '---';
-      this.goldTipText.textContent = `💡 Consejo de preparación: ${data.goldQuestion.tip || 'Prepara un ejemplo concreto.'}`;
-    }
-
-    // 2. Banco de Preguntas STAR
-    const questions = Array.isArray(data.questions) ? data.questions : [];
-    
-    if (questions.length === 0) {
-      this.questionsContainer.innerHTML = '<p style="color: var(--text-muted);">No se generaron preguntas adicionales.</p>';
+    if (!questions || !questions.length) {
+      this.container.innerHTML = '<p style="color: var(--text-muted);">No se pudieron generar las preguntas de entrevista.</p>';
       return;
     }
 
-    this.questionsContainer.innerHTML = questions.map((q, idx) => `
-      <div class="agent-card" style="border-left: 4px solid var(--accent-primary);">
-        <div class="agent-header" style="margin-bottom: 0.5rem;">
-          <div class="agent-title" style="font-size: 1rem; font-weight: bold;">
-            ❓ Pregunta ${idx + 1}: ${q.question}
-          </div>
-          <span class="agent-status-badge" style="background: var(--bg-hover); color: var(--accent-primary);">
-            ${q.category || 'Competencia'}
-          </span>
+    this.container.innerHTML = questions.map((q, idx) => `
+      <div class="interview-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem;">
+        <div style="font-size: 0.8rem; color: var(--accent-primary, #ff007f); font-weight: bold; text-transform: uppercase;">
+          Pregunta ${idx + 1} - ${q.category || 'General'}
         </div>
-
-        <div style="background: var(--bg-main); padding: 0.85rem; border-radius: var(--radius-md); margin-top: 0.5rem;">
-          <div style="font-size: 0.85rem; font-weight: bold; color: var(--text-main); margin-bottom: 0.4rem;">
-            🎯 Guía de Respuesta STAR:
+        <h4 style="margin: 0.5rem 0; color: #fff;">${q.question}</h4>
+        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 0.8rem;"><em>Por qué se pregunta:</em> ${q.why || ''}</p>
+        
+        ${q.starGuide ? `
+          <div style="background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: 6px; font-size: 0.85rem;">
+            <strong style="color: var(--status-success, #00f2fe);">Guía STAR sugerida:</strong>
+            <ul style="margin-top: 0.4rem; padding-left: 1.2rem; color: #ddd;">
+              <li><strong>S (Situación):</strong> ${q.starGuide.situation || ''}</li>
+              <li><strong>T (Tarea):</strong> ${q.starGuide.task || ''}</li>
+              <li><strong>A (Acción):</strong> ${q.starGuide.action || ''}</li>
+              <li><strong>R (Resultado):</strong> ${q.starGuide.result || ''}</li>
+            </ul>
           </div>
-          <ul style="font-size: 0.85rem; color: var(--text-muted); margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem;">
-            <li><strong>S (Situación):</strong> ${q.starGuide?.situation || 'Describe el contexto.'}</li>
-            <li><strong>T (Tarea):</strong> ${q.starGuide?.task || '¿Cuál era tu responsabilidad?'}</li>
-            <li><strong>A (Acción):</strong> ${q.starGuide?.action || '¿Qué pasos concretos diste?'}</li>
-            <li><strong>R (Resultado):</strong> ${q.starGuide?.result || '¿Qué impacto o logro conseguiste?'}</li>
-          </ul>
-        </div>
+        ` : ''}
       </div>
     `).join('');
   }

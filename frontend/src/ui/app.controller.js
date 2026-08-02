@@ -1,40 +1,41 @@
 import { PDFService } from '../services/pdf.service.js';
 import { StorageService } from '../services/storage.service.js';
-import { ExportService } from '../services/export.service.js';
-import { TemplateLoader } from './template-loader.js';
-
-// Importación de componentes modulares
 import { NavigationController } from './navigation.controller.js';
+import { ThemeController } from './theme.controller.js';
 import { RadarComponent } from '../components/radar/radar.component.js';
-import { CoverLetterComponent } from '../components/cover-letter/cover-letter.component.js';
 import { InterviewComponent } from '../components/interview/interview.component.js';
-import { ComparatorComponent } from '../components/comparator/comparator.component.js';
+import { CoverLetterComponent } from '../components/cover-letter/cover-letter.component.js';
 import { HistoryComponent } from '../components/history/history.component.js';
+import { BackendService } from '../services/backend.service.js';
 
 /**
  * AppController.js
- * Controlador orquestador central que comunica los componentes con los agentes de IA y Ollama.
+ * Controlador orquestador central del Frontend.
+ * Coordina la UI del Dashboard, el estado global de la app y la comunicación con C# (.NET Core).
  */
 export class AppController {
   constructor(orchestrator, ollamaService) {
     this.orchestrator = orchestrator;
     this.ollamaService = ollamaService;
+    this.backendService = new BackendService();
     this.extractedPdfText = '';
     this.activeTab = 'pdfTab';
     this.lastAnalysisData = null;
+    this.eventsBound = false;
 
-    // Inicializar componentes dinámicos de la SPA
-    this.initComponents();
-    this.startOllamaHealthCheck();
+    try {
+      this.initComponents();
+    } catch (err) {
+      console.error('Error inicializando componentes:', err);
+    }
   }
 
   /**
-   * Captura los elementos del DOM de la vista Dashboard activa
+   * Captura y re-asigna los elementos del DOM de la vista Dashboard.
    */
   initDOM() {
     this.form = document.getElementById('cvForm');
     this.modelInput = document.getElementById('modelSelect');
-    this.concurrencyInput = document.getElementById('concurrencySelect');
     this.cvTextArea = document.getElementById('cvContent');
     this.fileInput = document.getElementById('pdfFileInput');
     this.dropzone = document.getElementById('pdfDropzone');
@@ -51,40 +52,44 @@ export class AppController {
     this.kpiDuration = document.getElementById('kpiDuration');
 
     this.agentsList = ['ats', 'recruiter', 'grammar', 'technical', 'linkedin', 'career', 'summary'];
+
+    this.populateModelDropdown();
+    this.startBackendHealthCheck();
   }
 
   /**
-   * Instanciación de componentes modulares y del enrutador SPA
+   * Instanciación de componentes modulares y controladores del sistema.
    */
   initComponents() {
-    // 1. Instanciar componentes independientes
     this.radarComp = new RadarComponent('radarSvgWrapper');
-    this.coverLetterComp = new CoverLetterComponent(this);
     this.interviewComp = new InterviewComponent(this);
-    this.comparatorComp = new ComparatorComponent(this);
+    this.coverLetterComp = new CoverLetterComponent(this);
     this.historyComp = new HistoryComponent(this);
 
-    // 2. Inicializar conmutador de tema si está disponible
-    if (TemplateLoader && typeof TemplateLoader.initThemeToggle === 'function') {
-      TemplateLoader.initThemeToggle();
-    }
-
-    // 3. Inicializar enrutador de navegación (Este cargará el HTML del Dashboard y llamará a initDOM() y bindEvents())
+    this.themeCtrl = new ThemeController();
     this.navCtrl = new NavigationController(this);
   }
 
   /**
-   * Retorna el texto del CV según la pestaña activa (PDF / Texto)
+   * Retorna el texto del CV disponible según la pestaña seleccionada o activa
    */
   getCVText() {
-    return this.activeTab === 'pdfTab' ? this.extractedPdfText : (this.cvTextArea?.value || '');
+    const textFromPdf = this.extractedPdfText || '';
+    const textFromArea = this.cvTextArea?.value || '';
+
+    if (this.activeTab === 'pdfTab' && textFromPdf.trim()) {
+      return textFromPdf;
+    }
+    return textFromArea || textFromPdf;
   }
 
   /**
-   * Vincula los listeners de eventos para el formulario principal y subida de PDF
+   * Asigna los listeners de eventos para el formulario de entrada y el dropzone del PDF.
    */
   bindEvents() {
-    // Cambio entre pestañas PDF / Texto Plano
+    if (this.eventsBound) return;
+
+    // Eventos para pestañas PDF / Texto
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -95,7 +100,7 @@ export class AppController {
       });
     });
 
-    // Gestión de subida de PDF
+    // Subida y lectura de archivo PDF
     if (this.fileInput) {
       this.fileInput.addEventListener('change', async (e) => {
         if (e.target.files.length) {
@@ -107,7 +112,8 @@ export class AppController {
           try {
             this.extractedPdfText = await PDFService.extractText(file);
             if (this.cvTextArea) this.cvTextArea.value = this.extractedPdfText;
-            this.addLog('sys', `PDF "${file.name}" procesado correctamente.`);
+            this.activeTab = 'pdfTab';
+            this.addLog('sys', `PDF "${file.name}" procesado e introducido.`);
           } catch (err) {
             alert(`Error en PDF: ${err.message}`);
             this.clearPdf();
@@ -120,47 +126,120 @@ export class AppController {
       this.btnRemoveFile.addEventListener('click', () => this.clearPdf());
     }
 
-    // Envío del formulario principal de auditoría
+    // Submit del Formulario Principal
     if (this.form) {
       this.form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const cvText = this.getCVText();
 
-        if (!cvText.trim()) return alert('Proporciona un documento PDF o texto plano.');
-        const model = this.modelInput?.value;
-        if (!model) return alert('Selecciona un modelo de Ollama.');
+        if (!cvText || !cvText.trim()) {
+          return alert('Proporciona un documento PDF o texto plano.');
+        }
 
-        const concurrency = parseInt(this.concurrencyInput?.value, 10) || 2;
+        const model = this.modelInput?.value || 'llama3:latest';
 
         this.resetDashboard();
         this.setLoading(true);
 
         try {
-          await this.orchestrator.runPipeline(cvText, model, {
-            onLog: (type, text) => this.addLog(type, text),
-            onAgentStatus: (agent, state, badgeText, data) => this.updateAgentUI(agent, state, badgeText, data),
-            onComplete: (summaryData) => {
-              if (this.kpiGlobal) this.kpiGlobal.textContent = `${summaryData.globalScore}/100`;
-              if (this.kpiDuration) this.kpiDuration.textContent = `${summaryData.totalDuration}s`;
+          this.addLog('sys', `Enviando petición a C# usando modelo (${model})...`);
 
-              summaryData.fileName = this.fileInput?.files[0]?.name || 'CV_Texto_Plano';
-              this.lastAnalysisData = summaryData;
+          const result = await this.backendService.runAuditPipeline(cvText, model);
 
-              this.renderRadarFromData(summaryData);
-              StorageService.saveAnalysis(summaryData);
+          this.addLog('sys', `Respuesta recibida en ${result.durationSeconds}s desde C#.`);
+
+          // Extracción limpia del JSON devuelto
+          let rawStr = typeof result.rawResult === 'string' ? result.rawResult : JSON.stringify(result.rawResult);
+          
+          let cleanJson = rawStr;
+          const match = rawStr.match(/\{[\s\S]*\}/);
+          if (match) {
+            cleanJson = match[0];
+          }
+
+          let data = {};
+          try {
+            cleanJson = cleanJson.replace(/[\r\n]+/g, " ");
+            data = JSON.parse(cleanJson);
+          } catch (jsonErr) {
+            console.warn("Fallo leve de parseo en JSON de Ollama. Intentando limpieza secundaria...", jsonErr);
+            try {
+              cleanJson = cleanJson.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+              data = JSON.parse(cleanJson);
+            } catch (e2) {
+              data = { summaryText: rawStr };
             }
-          }, concurrency);
+          }
+
+          // Actualización de KPIs
+          if (this.kpiGlobal) this.kpiGlobal.textContent = `${data.globalScore || 80}/100`;
+          if (this.kpiDuration) this.kpiDuration.textContent = `${result.durationSeconds}s`;
+
+          // Actualización de Tarjetas de Agentes
+          if (data.results) {
+            Object.keys(data.results).forEach(agentKey => {
+              const agentData = data.results[agentKey];
+              this.updateAgentUI(agentKey, 'done', `${agentData.score || 0}/100`, agentData);
+            });
+          }
+
+          // Tarjeta de Resumen Estratégico
+          this.updateAgentUI('summary', 'done', 'Finalizado', { 
+            summary: data.summaryText || "Auditoría completada con éxito." 
+          });
+
+          // Guardar estado global de la auditoría
+          const summaryData = {
+            globalScore: data.globalScore || 80,
+            totalDuration: result.durationSeconds,
+            results: data.results || {},
+            finalSummaryText: data.summaryText || 'Evaluación completada.',
+            cvText: cvText,
+            fileName: this.fileInput?.files[0]?.name || 'CV_Texto_Plano',
+            formattedDate: new Date().toLocaleString()
+          };
+
+          this.lastAnalysisData = summaryData;
+          this.renderRadarFromData(summaryData);
+          StorageService.saveAnalysis(summaryData);
+
+          this.addLog('sys', '✅ Renderizado de tarjetas y Radar 360° completado.');
+
         } catch (err) {
-          this.addLog('error', `Error durante el pipeline: ${err.message}`);
+          this.addLog('error', `Error en la API C#: ${err.message}`);
+          alert(`Fallo en la auditoría: ${err.message}`);
         } finally {
           this.setLoading(false);
         }
       });
     }
+
+    this.eventsBound = true;
   }
 
   /**
-   * Renderiza el gráfico SVG del Radar de competencias
+   * Restaura el estado visual de las tarjetas al navegar entre secciones SPA
+   */
+  restoreDashboardState(data) {
+    if (!data) return;
+    if (this.kpiGlobal) this.kpiGlobal.textContent = `${data.globalScore}/100`;
+    if (this.kpiDuration) this.kpiDuration.textContent = `${data.totalDuration}s`;
+
+    if (data.results) {
+      Object.keys(data.results).forEach(agentKey => {
+        const agentData = data.results[agentKey];
+        this.updateAgentUI(agentKey, 'done', `${agentData.score || 0}/100`, agentData);
+      });
+    }
+
+    this.updateAgentUI('summary', 'done', 'Finalizado', { summary: data.finalSummaryText });
+    if (this.cvTextArea && data.cvText) {
+      this.cvTextArea.value = data.cvText;
+    }
+  }
+
+  /**
+   * Pasa los puntajes de los 6 agentes al componente Radar 360° SVG
    */
   renderRadarFromData(data) {
     if (!this.radarComp) return;
@@ -176,63 +255,53 @@ export class AppController {
   }
 
   /**
-   * Carga una evaluación guardada en el historial
+   * Comprueba en segundo plano si C# y Ollama responden en /health/ollama
    */
-  loadAnalysisFromHistory(data) {
-    this.lastAnalysisData = data;
-    if (this.kpiGlobal) this.kpiGlobal.textContent = `${data.globalScore}/100`;
-    if (this.kpiDuration) this.kpiDuration.textContent = `${data.totalDuration}s`;
-
-    this.renderRadarFromData(data);
-
-    if (data.results) {
-      Object.entries(data.results).forEach(([agent, result]) => {
-        this.updateAgentUI(agent, 'done', `${result.score}/100`, result);
-      });
-    }
-
-    this.updateAgentUI('summary', 'done', 'Finalizado', { summary: data.finalSummaryText });
-    this.addLog('sys', `Análisis cargado desde el historial (${data.formattedDate}).`);
-  }
-
-  /**
-   * Comprueba el estado del servidor Ollama
-   */
-  startOllamaHealthCheck() {
+  startBackendHealthCheck() {
     const verify = async () => {
-      const health = await this.ollamaService.checkHealth();
-      if (!this.ollamaStatusEl || !this.ollamaStatusText || !this.modelInput) return;
+      try {
+        const isBackendUp = await this.backendService.checkHealth();
+        if (!this.ollamaStatusEl || !this.ollamaStatusText) return;
 
-      if (health.online) {
-        this.ollamaStatusEl.className = 'ollama-status online';
-        this.ollamaStatusText.textContent = 'Ollama Online';
-        this.populateModelDropdown(health.models);
-      } else {
-        this.ollamaStatusEl.className = 'ollama-status offline';
-        this.ollamaStatusText.textContent = 'Ollama Offline';
-        this.modelInput.innerHTML = '<option value="">Ollama no disponible</option>';
+        if (isBackendUp) {
+          this.ollamaStatusEl.className = 'ollama-status online';
+          this.ollamaStatusText.textContent = 'API C# Online';
+        } else {
+          this.ollamaStatusEl.className = 'ollama-status offline';
+          this.ollamaStatusText.textContent = 'C# API Offline';
+        }
+      } catch (e) {
+        if (this.ollamaStatusEl) this.ollamaStatusEl.className = 'ollama-status offline';
+        if (this.ollamaStatusText) this.ollamaStatusText.textContent = 'Offline';
       }
     };
     verify();
-    setInterval(verify, 8000);
+    setInterval(verify, 10000);
   }
 
-  populateModelDropdown(models) {
+  /**
+   * Rellena el selector con los modelos locales de Ollama disponibles
+   */
+  populateModelDropdown() {
     if (!this.modelInput) return;
 
     const currentSelection = this.modelInput.value;
 
-    let optionsHtml = models.map(m => `
+    const listToRender = [
+      { name: 'llama3:latest', size: 4.7 * 1024 * 1024 * 1024 },
+      { name: 'llama3.2:latest', size: 2.0 * 1024 * 1024 * 1024 }
+    ];
+
+    let optionsHtml = listToRender.map(m => `
       <option value="${m.name}">${m.name} (${(m.size / (1024 * 1024 * 1024)).toFixed(1)} GB - Local)</option>
     `).join('');
 
-    // Añadir Bonsai al principio de la lista
     optionsHtml = `
-      <optgroup label="⚡ Cloud API (Alta Potencia)">
-        <option value="prism-ml/bonsai-27b">🌲 Bonsai 27B (Prism ML API)</option>
-      </optgroup>
-      <optgroup label="💻 Modelos Locales (Ollama)">
+      <optgroup label="💻 Modelos Locales (Ollama via C#)">
         ${optionsHtml}
+      </optgroup>
+      <optgroup label="⚡ Cloud API / Otros">
+        <option value="prism-ml/bonsai-27b">🌲 Bonsai 27B (LM Studio / API)</option>
       </optgroup>
     `;
 
@@ -243,6 +312,9 @@ export class AppController {
     }
   }
 
+  /**
+   * Agrega mensajes a la consola interactiva del panel
+   */
   addLog(type, text) {
     if (!this.consoleLogs) return;
     const time = new Date().toLocaleTimeString();
@@ -253,6 +325,9 @@ export class AppController {
     this.consoleLogs.scrollTop = this.consoleLogs.scrollHeight;
   }
 
+  /**
+   * Resetea el panel a su estado de espera antes de una nueva orquestación
+   */
   resetDashboard() {
     if (this.kpiGlobal) this.kpiGlobal.textContent = '--/100';
     if (this.kpiDuration) this.kpiDuration.textContent = '0.0s';
@@ -270,6 +345,9 @@ export class AppController {
     });
   }
 
+  /**
+   * Limpia el PDF cargado y restaura la vista del Dropzone
+   */
   clearPdf() {
     this.extractedPdfText = '';
     if (this.fileInput) this.fileInput.value = '';
@@ -286,6 +364,9 @@ export class AppController {
     return String(item);
   }
 
+  /**
+   * Formatea e inyecta la información devuelta por la IA en la tarjeta de cada agente
+   */
   updateAgentUI(agent, state, badgeText, data) {
     const badge = document.getElementById(`badge-${agent}`);
     if (badge) {
@@ -297,14 +378,6 @@ export class AppController {
     if (!output || !data) return;
 
     let parsedData = data;
-
-    if (typeof parsedData === 'object' && parsedData !== null && parsedData.summary && typeof parsedData.summary === 'string') {
-      if (parsedData.summary.trim().startsWith('{')) {
-        try {
-          parsedData = JSON.parse(parsedData.summary);
-        } catch (e) { }
-      }
-    }
 
     if (typeof parsedData === 'string') {
       try {
@@ -324,8 +397,8 @@ export class AppController {
         : `<li>${parsedData.summary || parsedData.summaryText || 'Análisis consolidado.'}</li>`;
 
       output.innerHTML = `
-        <div style="font-weight: bold; margin-bottom: 0.5rem; color: var(--accent-primary);">
-          ${parsedData.summary && typeof parsedData.summary === 'string' && !parsedData.summary.startsWith('{') ? parsedData.summary : 'Plan Estratégico Consolidado:'}
+        <div style="font-weight: bold; margin-bottom: 0.5rem; color: var(--accent-primary, #ff007f);">
+          ${parsedData.summary || 'Plan Estratégico Consolidado:'}
         </div>
         <ul class="bullet-list" style="padding-left: 1.2rem;">
           ${actionListHtml}
@@ -337,22 +410,22 @@ export class AppController {
       const recommendations = Array.isArray(parsedData.recommendations) ? parsedData.recommendations : [];
 
       output.innerHTML = `
-        <div style="margin-bottom: 0.5rem; color: var(--text-main); font-weight: 500;">
+        <div style="margin-bottom: 0.5rem; color: var(--text-main, #fff); font-weight: 500;">
           ${parsedData.summary || 'Análisis completado.'}
         </div>
         
         ${strengths.length ? `
-          <div class="card-section-title" style="color: var(--status-success); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">Puntos Fuertes:</div>
+          <div style="color: var(--status-success, #00f2fe); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">Puntos Fuertes:</div>
           <ul class="bullet-list">${strengths.map(s => `<li>${this.#formatListItem(s)}</li>`).join('')}</ul>
         ` : ''}
 
         ${weaknesses.length ? `
-          <div class="card-section-title" style="color: var(--status-danger); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">A Mejorar:</div>
+          <div style="color: var(--status-danger, #ff4b2b); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">A Mejorar:</div>
           <ul class="bullet-list">${weaknesses.map(w => `<li>${this.#formatListItem(w)}</li>`).join('')}</ul>
         ` : ''}
 
         ${recommendations.length ? `
-          <div class="card-section-title" style="color: var(--accent-primary); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">Recomendaciones:</div>
+          <div style="color: var(--accent-primary, #ff007f); margin-top: 0.5rem; font-weight: bold; font-size: 0.85rem;">Recomendaciones:</div>
           <ul class="bullet-list">${recommendations.map(r => `<li>${this.#formatListItem(r)}</li>`).join('')}</ul>
         ` : ''}
       `;

@@ -639,3 +639,39 @@ button {
   color: var(--accent-primary, #2563eb);
   font-weight: 600;
 }
+
+/* Estilos ajustados para tarjetas de agentes */
+.agent-card-output {
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Personalizar barra de scroll elegante */
+.agent-card-output::-webkit-scrollbar {
+  width: 5px;
+}
+
+.agent-card-output::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.agent-card-output::-webkit-scrollbar-thumb {
+  background: var(--accent-primary, #ff007f);
+  border-radius: 4px;
+}
+
+.bullet-list {
+  padding-left: 1.1rem;
+  margin-top: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.bullet-list li {
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+}
